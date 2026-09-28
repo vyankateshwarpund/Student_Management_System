@@ -1,0 +1,82 @@
+{% extends 'base.html' %}
+
+{% block title %}School Calendar — EduManager{% endblock %}
+
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
+    <div>
+        <h3 class="fw-bold text-dark mb-1">Academic & Institutional Calendar</h3>
+        <p class="text-muted small mb-0">Holidays, term examination intervals, and university cultural festivals</p>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="/events/" class="btn btn-outline-primary btn-sm">
+            <i class="bi bi-calendar-event me-1"></i> Campus Events
+        </a>
+    </div>
+</div>
+
+<div class="card border-0 shadow-sm overflow-hidden mb-4">
+    <div class="card-header border-0 py-3 px-4 d-flex justify-content-between align-items-center" style="background-color: #374151; color: white;">
+        <h5 class="fw-bold text-white mb-0">September - October 2026</h5>
+        <div class="d-flex gap-3 small align-items-center">
+            <div class="d-flex align-items-center gap-1">
+                <span class="rounded-1 d-inline-block" style="width: 12px; height: 12px; background-color: #eab308;"></span>
+                <span>Holiday</span>
+            </div>
+            <div class="d-flex align-items-center gap-1">
+                <span class="rounded-1 d-inline-block" style="width: 12px; height: 12px; background-color: #3b82f6;"></span>
+                <span>Event</span>
+            </div>
+            <div class="d-flex align-items-center gap-1">
+                <span class="rounded-1 d-inline-block" style="width: 12px; height: 12px; background-color: #8b5cf6;"></span>
+                <span>Exam</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="card-body p-4">
+        <div class="row g-4" id="calendarEventsList">
+            <div class="col-12 text-center py-4 text-muted">Loading calendar events...</div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', async () => {
+    const container = document.getElementById('calendarEventsList');
+    try {
+        const res = await api.get('/services/events/');
+        const events = res.results || res.data || [];
+        if (!events.length) {
+            container.innerHTML = `<div class="col-12 text-center py-4 text-muted">No scheduled calendar events.</div>`;
+            return;
+        }
+
+        const typeBadges = {
+            'holiday': 'bg-warning text-dark',
+            'event': 'bg-primary text-white',
+            'exam': 'bg-danger text-white'
+        };
+
+        container.innerHTML = events.map(e => `
+            <div class="col-md-6">
+                <div class="card p-3 border rounded-3 h-100 border-start border-4 ${e.event_type === 'holiday' ? 'border-warning' : (e.event_type === 'exam' ? 'border-danger' : 'border-primary')}">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <span class="badge ${typeBadges[e.event_type] || 'bg-secondary'} text-uppercase font-monospace">${e.event_type}</span>
+                        <span class="text-muted small fw-semibold font-monospace">${e.start_date} ${e.end_date !== e.start_date ? '→ ' + e.end_date : ''}</span>
+                    </div>
+                    <h5 class="fw-bold text-dark mb-1">${e.title}</h5>
+                    <div class="text-muted small mb-2"><i class="bi bi-geo-alt me-1"></i> ${e.location}</div>
+                    <p class="text-secondary small mb-0">${e.description}</p>
+                </div>
+            </div>
+        `).join('');
+    } catch(err) {
+        console.error(err);
+        container.innerHTML = `<div class="col-12 text-center text-danger py-4">Failed to load calendar events.</div>`;
+    }
+});
+</script>
+{% endblock %}

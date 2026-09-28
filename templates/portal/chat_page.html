@@ -1,0 +1,268 @@
+{% extends 'base.html' %}
+
+{% block title %}Campus Chat & Messenger — EduManager{% endblock %}
+
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
+    <div>
+        <h3 class="fw-bold text-dark mb-1">Campus Messenger & Chat</h3>
+        <p class="text-muted small mb-0">Direct real-time messaging with course mentors and classmates</p>
+    </div>
+</div>
+
+<div class="card border-0 shadow-sm overflow-hidden" style="height: 650px;">
+    <div class="row g-0 h-100">
+        <!-- Chat Contacts List -->
+        <div class="col-md-4 border-end h-100 d-flex flex-column bg-light">
+            <div class="p-3 border-bottom bg-white">
+                <input type="text" class="form-control form-control-sm" id="chatSearchInput" placeholder="Search mentors & students...">
+            </div>
+            <div class="overflow-y-auto flex-grow-1 p-2" id="chatContacts">
+                <div class="text-center py-4 text-secondary small">
+                    <span class="spinner-border spinner-border-sm me-1"></span> Loading contacts...
+                </div>
+            </div>
+        </div>
+
+        <!-- Chat Conversation Area -->
+        <div class="col-md-8 h-100 d-flex flex-column bg-white">
+            <!-- Chat Header -->
+            <div class="p-3 border-bottom d-flex align-items-center justify-content-between">
+                <div class="d-flex align-items-center gap-2">
+                    <div class="rounded-circle bg-success" style="width: 10px; height: 10px;"></div>
+                    <div>
+                        <h6 class="fw-bold mb-0 text-dark" id="activeContactName">Select a contact</h6>
+                        <span class="text-muted small" style="font-size: 0.75rem;" id="activeContactRole">Online Mentor</span>
+                    </div>
+                </div>
+                <div class="d-flex gap-2">
+                    <a href="/live-classes/" class="btn btn-sm btn-outline-secondary" title="Start Call"><i class="bi bi-camera-video"></i></a>
+                </div>
+            </div>
+
+            <!-- Messages Stream -->
+            <div class="flex-grow-1 p-3 overflow-y-auto d-flex flex-column gap-3" id="messagesContainer">
+                <div class="text-center py-5 text-secondary small">
+                    <i class="bi bi-chat-left-dots display-6 d-block mb-2 text-muted"></i>
+                    Select a teacher or student from the left panel to start messaging.
+                </div>
+            </div>
+
+            <!-- Chat Input Bar -->
+            <div class="p-3 border-top bg-light">
+                <form id="chatSendForm" class="d-flex gap-2">
+                    <input type="text" id="chatInputMessage" class="form-control" placeholder="Type a message..." autocomplete="off" required>
+                    <button type="submit" class="btn btn-primary px-4"><i class="bi bi-send-fill"></i></button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let allContacts = [];
+let activeContact = null;
+const conversationHistory = {};
+
+document.addEventListener('DOMContentLoaded', async () => {
+    if (!auth.requireAuth()) return;
+    await loadChatContacts();
+    setupSearchFilter();
+});
+
+async function loadChatContacts() {
+    const container = document.getElementById('chatContacts');
+    try {
+        const teachersRes = await api.get('/teachers/');
+        const teachers = teachersRes.results || teachersRes.data || [];
+
+        let students = [];
+        try {
+            const studentsRes = await api.get('/students/');
+            students = (studentsRes.results || studentsRes.data || []).slice(0, 10);
+        } catch (e) {
+            console.warn('Could not fetch students for chat:', e);
+        }
+
+        allContacts = [];
+
+        teachers.forEach(t => {
+            const name = t.full_name || t.name || 'Faculty Member';
+            const dept = t.department_name || t.department || 'Faculty';
+            const initials = name.split(' ').map(p => p[0]).join('').substring(0, 2).toUpperCase();
+            allContacts.push({
+                id: `teacher_${t.id}`,
+                name: name,
+                role: `${t.qualification ? t.qualification + ' • ' : ''}${dept}`,
+                initials: initials,
+                isTeacher: true,
+                time: 'Online',
+                lastMsg: 'Available for academic queries'
+            });
+        });
+
+        students.forEach(s => {
+            const name = s.full_name || `${s.first_name || ''} ${s.last_name || ''}`.trim() || 'Student';
+            const course = typeof s.course === 'object' ? s.course.name : (s.course || 'Student');
+            const initials = name.split(' ').map(p => p[0]).join('').substring(0, 2).toUpperCase();
+            allContacts.push({
+                id: `student_${s.id}`,
+                name: name,
+                role: `${course} • Sem ${s.semester || '1'}`,
+                initials: initials,
+                isTeacher: false,
+                time: 'Active',
+                lastMsg: 'Peer study'
+            });
+        });
+
+        renderContacts(allContacts);
+
+        if (allContacts.length > 0) {
+            selectContact(allContacts[0]);
+        }
+    } catch (e) {
+        console.error('Error loading chat contacts:', e);
+        container.innerHTML = '<div class="text-danger small p-3">Failed to load contacts from server.</div>';
+    }
+}
+
+function renderContacts(contacts) {
+    const container = document.getElementById('chatContacts');
+    if (!container) return;
+
+    if (contacts.length === 0) {
+        container.innerHTML = '<div class="text-secondary small p-3 text-center">No contacts found</div>';
+        return;
+    }
+
+    container.innerHTML = contacts.map(c => {
+        const isActive = activeContact && activeContact.id === c.id;
+        const bgClass = isActive ? 'bg-primary text-white' : 'bg-white text-dark';
+        const avatarBg = isActive ? 'bg-white text-primary' : (c.isTeacher ? 'bg-primary bg-opacity-10 text-primary' : 'bg-secondary bg-opacity-25 text-dark');
+        const subtextClass = isActive ? 'opacity-75' : 'text-muted';
+
+        return `
+            <div class="card p-2 border-0 shadow-none mb-1 ${bgClass} rounded-3 cursor-pointer contact-card"
+                onclick="handleSelectContact('${c.id}')" style="cursor: pointer;">
+                <div class="d-flex align-items-center gap-2">
+                    <div class="avatar-sm ${avatarBg} rounded-circle d-flex align-items-center justify-content-center fw-bold flex-shrink-0" style="width: 36px; height: 36px;">
+                        ${c.initials}
+                    </div>
+                    <div class="flex-grow-1 overflow-hidden">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span class="fw-bold small text-truncate">${escapeHtml(c.name)}</span>
+                            <span class="small ${subtextClass}" style="font-size: 0.7rem;">${c.time}</span>
+                        </div>
+                        <div class="small ${subtextClass} text-truncate" style="font-size: 0.75rem;">${escapeHtml(c.role)}</div>
+                    </div>
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+function handleSelectContact(contactId) {
+    const contact = allContacts.find(c => c.id === contactId);
+    if (contact) {
+        selectContact(contact);
+    }
+}
+
+function selectContact(contact) {
+    activeContact = contact;
+    document.getElementById('activeContactName').textContent = contact.name;
+    document.getElementById('activeContactRole').textContent = contact.role;
+    document.getElementById('chatInputMessage').placeholder = `Type a message to ${contact.name}...`;
+
+    renderContacts(allContacts);
+    renderMessages(contact.id);
+}
+
+function renderMessages(contactId) {
+    const stream = document.getElementById('messagesContainer');
+    const msgs = conversationHistory[contactId] || [
+        {
+            isSelf: false,
+            text: `Hello! I am ${activeContact.name}. Feel free to drop any questions regarding courses, assignments, or campus matters.`,
+            time: 'Just now'
+        }
+    ];
+
+    conversationHistory[contactId] = msgs;
+
+    stream.innerHTML = msgs.map(m => {
+        if (m.isSelf) {
+            return `
+                <div class="d-flex flex-column align-items-end align-self-end" style="max-width: 75%;">
+                    <div class="p-3 rounded-3 bg-primary text-white small">${escapeHtml(m.text)}</div>
+                    <span class="text-muted mt-1" style="font-size: 0.7rem;">${m.time}</span>
+                </div>
+            `;
+        } else {
+            return `
+                <div class="d-flex flex-column align-items-start" style="max-width: 75%;">
+                    <div class="p-3 rounded-3 bg-light text-dark small">${escapeHtml(m.text)}</div>
+                    <span class="text-muted mt-1" style="font-size: 0.7rem;">${m.time}</span>
+                </div>
+            `;
+        }
+    }).join('');
+
+    stream.scrollTop = stream.scrollHeight;
+}
+
+function setupSearchFilter() {
+    const input = document.getElementById('chatSearchInput');
+    if (!input) return;
+
+    input.addEventListener('input', (e) => {
+        const query = e.target.value.toLowerCase().trim();
+        if (!query) {
+            renderContacts(allContacts);
+            return;
+        }
+        const filtered = allContacts.filter(c =>
+            c.name.toLowerCase().includes(query) || c.role.toLowerCase().includes(query)
+        );
+        renderContacts(filtered);
+    });
+}
+
+document.getElementById('chatSendForm')?.addEventListener('submit', (e) => {
+    e.preventDefault();
+    if (!activeContact) return;
+
+    const input = document.getElementById('chatInputMessage');
+    const msg = input.value.trim();
+    if (!msg) return;
+
+    const now = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+    if (!conversationHistory[activeContact.id]) {
+        conversationHistory[activeContact.id] = [];
+    }
+
+    conversationHistory[activeContact.id].push({
+        isSelf: true,
+        text: msg,
+        time: now
+    });
+
+    renderMessages(activeContact.id);
+    input.value = '';
+
+    // Smart auto-reply from recipient
+    setTimeout(() => {
+        conversationHistory[activeContact.id].push({
+            isSelf: false,
+            text: `Thank you for your message. I have received your note and will review it shortly.`,
+            time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+        });
+        renderMessages(activeContact.id);
+    }, 1200);
+});
+</script>
+{% endblock %}

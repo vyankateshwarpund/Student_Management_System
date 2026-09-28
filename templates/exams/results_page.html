@@ -1,0 +1,354 @@
+{% extends 'base.html' %}
+
+{% block title %}Semester Examination Results — EduManager{% endblock %}
+
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
+    <div>
+        <h3 class="fw-bold text-dark mb-1">Semester Examination Results</h3>
+        <p class="text-muted small mb-0">Official grade statements, semester SGPA, and cumulative academic performance</p>
+    </div>
+    <div class="d-flex gap-2">
+        <button class="btn btn-outline-secondary btn-sm" onclick="window.print()">
+            <i class="bi bi-printer me-1"></i> Print Statement
+        </button>
+        <button class="btn btn-primary btn-sm" id="btnDownloadTranscript" style="display: none;" onclick="openTranscript()">
+            <i class="bi bi-file-earmark-pdf me-1"></i> Official Transcript
+        </button>
+    </div>
+</div>
+
+<!-- Search / Roll Number Query Box -->
+<div class="card p-4 border-0 shadow-sm mb-4">
+    <div class="row g-3 align-items-end">
+        <div class="col-md-5">
+            <label class="form-label small fw-semibold text-secondary">Student Roll No / ID</label>
+            <div class="input-group">
+                <span class="input-group-text bg-light border-end-0"><i class="bi bi-search text-muted"></i></span>
+                <input type="text" id="resultRollInput" class="form-control border-start-0" placeholder="e.g. 2026CSE001">
+            </div>
+        </div>
+        <div class="col-md-4">
+            <label class="form-label small fw-semibold text-secondary">Filter Semester</label>
+            <select id="resultSemSelect" class="form-select" onchange="renderFilteredResults()">
+                <option value="all">All Available Semesters</option>
+                <option value="1">Semester 1</option>
+                <option value="2">Semester 2</option>
+                <option value="3">Semester 3</option>
+                <option value="4">Semester 4</option>
+            </select>
+        </div>
+        <div class="col-md-3">
+            <button class="btn btn-primary w-100" onclick="searchStudentResults()">
+                <i class="bi bi-arrow-right-circle me-1"></i> Search Results
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Results Presentation Container -->
+<div id="resultsWrapper" style="display: none;">
+    <!-- Student Header & Academic Status -->
+    <div class="card p-4 border-0 shadow-sm mb-4 bg-gradient" style="background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); color: white;">
+        <div class="row align-items-center g-3">
+            <div class="col-md-8">
+                <div class="badge bg-primary text-white mb-2 px-3 py-1 font-monospace" id="resStudentId">ID: --</div>
+                <h4 class="fw-bold mb-1" id="resStudentName">Student Name</h4>
+                <div class="text-white-50 small">
+                    <span id="resCourse">B.Tech Computer Science</span> &bull; 
+                    <span id="resDepartment">Department of Engineering</span> &bull; 
+                    Current Semester: <span id="resCurrentSem" class="text-white fw-bold">1</span>
+                </div>
+            </div>
+            <div class="col-md-4 text-md-end">
+                <div class="badge bg-success bg-opacity-25 text-success border border-success border-opacity-50 px-3 py-2 fs-6 fw-bold" id="resClassification">
+                    FIRST CLASS WITH DISTINCTION
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- KPI Metric Cards -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-3">
+            <div class="card p-3 border-0 shadow-sm h-100 border-start border-primary border-4">
+                <span class="text-muted small fw-semibold text-uppercase">Cumulative CGPA</span>
+                <h2 class="fw-bold text-primary mb-0 mt-1" id="resCGPA">0.00</h2>
+                <span class="text-muted small">Scale of 10.0</span>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card p-3 border-0 shadow-sm h-100 border-start border-success border-4">
+                <span class="text-muted small fw-semibold text-uppercase">Latest SGPA</span>
+                <h2 class="fw-bold text-success mb-0 mt-1" id="resSGPA">0.00</h2>
+                <span class="text-muted small">Semester performance</span>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card p-3 border-0 shadow-sm h-100 border-start border-info border-4">
+                <span class="text-muted small fw-semibold text-uppercase">Total Credits Earned</span>
+                <h2 class="fw-bold text-info mb-0 mt-1" id="resCredits">0 / 0</h2>
+                <span class="text-muted small">Degree requirement</span>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card p-3 border-0 shadow-sm h-100 border-start border-warning border-4">
+                <span class="text-muted small fw-semibold text-uppercase">Evaluation Status</span>
+                <h2 class="fw-bold text-dark mb-0 mt-1" id="resStatusBadge">PASSED</h2>
+                <span class="text-muted small">Zero active backlogs</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Detailed Semester Grade Sheets -->
+    <div id="semestersContainer"></div>
+
+    <!-- Re-evaluation prompt card -->
+    <div class="card p-3 border-0 shadow-sm bg-light d-flex flex-row justify-content-between align-items-center mb-4">
+        <div class="d-flex align-items-center gap-3">
+            <i class="bi bi-info-circle fs-3 text-secondary"></i>
+            <div>
+                <div class="fw-semibold text-dark">Have questions about your scores or evaluation?</div>
+                <div class="text-muted small">You may submit an application for grade re-totaling or answer sheet photocopy within 14 days of declaration.</div>
+            </div>
+        </div>
+        <button class="btn btn-outline-dark btn-sm px-3" data-bs-toggle="modal" data-bs-target="#reevalModal">
+            Apply Re-evaluation
+        </button>
+    </div>
+</div>
+
+<!-- Empty State / Loading State -->
+<div id="resultsEmptyState" class="card p-5 border-0 shadow-sm text-center">
+    <div class="my-4">
+        <i class="bi bi-award fs-1 text-muted opacity-50"></i>
+        <h5 class="fw-bold text-secondary mt-3">Search Semester Examination Results</h5>
+        <p class="text-muted small mx-auto" style="max-width: 480px;">
+            Enter your official Student Roll Number or ID above to fetch verified university grade sheets, SGPA/CGPA calculations, and pass certificates.
+        </p>
+    </div>
+</div>
+
+<!-- Modal: Re-evaluation Request -->
+<div class="modal fade" id="reevalModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header border-0 pb-0">
+                <h5 class="modal-title fw-bold">Request Grade Re-evaluation</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body py-3">
+                <p class="small text-muted mb-3">
+                    As per University Examination Regulations 2026, re-evaluation involves blind reassessment of the answer script by an external evaluator.
+                </p>
+                <div class="mb-3">
+                    <label class="form-label small fw-semibold text-secondary">Select Paper</label>
+                    <select id="reevalSubjectSelect" class="form-select"></select>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label small fw-semibold text-secondary">Reason / Specific Concern</label>
+                    <textarea class="form-control" rows="3" placeholder="Explain discrepancy in total marks or unchecked answers..."></textarea>
+                </div>
+                <div class="alert alert-info py-2 small mb-0">
+                    <i class="bi bi-info-circle me-1"></i> Applicable re-evaluation fee of ₹500 per paper will be billed to student account upon submission.
+                </div>
+            </div>
+            <div class="modal-footer border-0 pt-0">
+                <button type="button" class="btn btn-light" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary px-4" onclick="submitReeval()">Submit Grievance</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let currentTranscriptData = null;
+let currentStudentId = null;
+
+document.addEventListener('DOMContentLoaded', async () => {
+    // Check if student profile exists in current user session
+    const user = JSON.parse(localStorage.getItem('user') || '{}');
+    if (user.role === 'student' && user.student_profile) {
+        document.getElementById('resultRollInput').value = user.student_profile.student_id;
+        await searchStudentResults();
+    } else {
+        // Pre-fill with a sample student for ease of demonstration
+        try {
+            const res = await api.get('/students/?limit=1');
+            const students = res.results || res.data || [];
+            if (students.length) {
+                document.getElementById('resultRollInput').value = students[0].student_id;
+                await searchStudentResults();
+            }
+        } catch(e) {
+            console.error(e);
+        }
+    }
+});
+
+async function searchStudentResults() {
+    const roll = document.getElementById('resultRollInput').value.trim();
+    if (!roll) {
+        showToast('Please enter a student roll number or ID', 'warning');
+        return;
+    }
+
+    try {
+        // Find student by student_id
+        const res = await api.get(`/students/?search=${encodeURIComponent(roll)}`);
+        const list = res.results || res.data || [];
+        const student = list.find(s => s.student_id.toLowerCase() === roll.toLowerCase()) || list[0];
+
+        if (!student) {
+            showToast('No student found matching roll number ' + roll, 'danger');
+            return;
+        }
+
+        currentStudentId = student.id;
+
+        // Fetch transcript API
+        const tRes = await api.get(`/students/${student.id}/transcript/`);
+        currentTranscriptData = tRes.data;
+
+        renderResults(currentTranscriptData);
+
+    } catch (err) {
+        console.error(err);
+        showToast(err.message || 'Failed to fetch examination results', 'danger');
+    }
+}
+
+function renderResults(data) {
+    if (!data) return;
+
+    document.getElementById('resultsEmptyState').style.display = 'none';
+    document.getElementById('resultsWrapper').style.display = 'block';
+    document.getElementById('btnDownloadTranscript').style.display = 'inline-block';
+
+    const s = data.student;
+    document.getElementById('resStudentId').textContent = 'ROLL NO: ' + (s.student_id || '');
+    document.getElementById('resStudentName').textContent = s.full_name || '';
+    document.getElementById('resCourse').textContent = (s.course && s.course.name) || '';
+    document.getElementById('resDepartment').textContent = (s.department && s.department.name) || '';
+    document.getElementById('resCurrentSem').textContent = s.semester || '1';
+
+    document.getElementById('resCGPA').textContent = (data.cgpa || 0).toFixed(2);
+    document.getElementById('resCredits').textContent = `${data.earned_credits || 0} / ${data.total_credits || 0}`;
+    document.getElementById('resClassification').textContent = data.classification || 'PASSED';
+
+    const latestSem = data.semesters && data.semesters.length ? data.semesters[data.semesters.length - 1] : null;
+    document.getElementById('resSGPA').textContent = latestSem ? (latestSem.sgpa || 0).toFixed(2) : (data.cgpa || 0).toFixed(2);
+
+    renderFilteredResults();
+    populateReevalSubjects(data);
+}
+
+function renderFilteredResults() {
+    if (!currentTranscriptData) return;
+    const filterSem = document.getElementById('resultSemSelect').value;
+    const container = document.getElementById('semestersContainer');
+
+    let semesters = currentTranscriptData.semesters || [];
+    if (filterSem !== 'all') {
+        semesters = semesters.filter(s => s.semester == filterSem);
+    }
+
+    if (!semesters.length) {
+        container.innerHTML = `<div class="card p-4 text-center text-muted border-0 shadow-sm mb-4">No marks recorded for Semester ${filterSem}.</div>`;
+        return;
+    }
+
+    const gradeBadges = {
+        'O': 'bg-success text-white',
+        'A+': 'bg-primary text-white',
+        'A': 'bg-info text-white',
+        'B+': 'bg-primary bg-opacity-25 text-primary',
+        'B': 'bg-secondary bg-opacity-25 text-secondary',
+        'C': 'bg-warning bg-opacity-25 text-warning',
+        'F': 'bg-danger text-white'
+    };
+
+    container.innerHTML = semesters.map(sem => `
+        <div class="card p-0 border-0 shadow-sm mb-4 overflow-hidden">
+            <div class="card-header bg-light py-3 px-4 d-flex justify-content-between align-items-center">
+                <div class="d-flex align-items-center gap-2">
+                    <span class="badge bg-dark">Semester ${sem.semester}</span>
+                    <span class="fw-bold text-dark">Coursework & Paper Evaluations</span>
+                </div>
+                <div class="d-flex gap-3 small">
+                    <span><strong>Total Credits:</strong> ${sem.total_credits}</span>
+                    <span><strong>Credits Earned:</strong> ${sem.earned_credits}</span>
+                    <span class="badge bg-primary px-3 py-1 fs-6">SGPA: ${sem.sgpa.toFixed(2)}</span>
+                </div>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light small text-uppercase">
+                        <tr>
+                            <th>Subject</th>
+                            <th>Credits</th>
+                            <th>Internal (40)</th>
+                            <th>External (60)</th>
+                            <th>Total (100)</th>
+                            <th>Grade</th>
+                            <th>Grade Point</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${sem.records.map(r => `
+                            <tr>
+                                <td>
+                                    <div class="fw-bold text-dark">${r.subject_name}</div>
+                                    <span class="badge bg-light text-secondary border font-monospace">${r.subject_code}</span>
+                                </td>
+                                <td><span class="fw-semibold">${r.credits}</span></td>
+                                <td>${r.internal_marks}</td>
+                                <td>${r.external_marks}</td>
+                                <td><strong class="text-dark">${r.total_marks}</strong></td>
+                                <td>
+                                    <span class="badge ${gradeBadges[r.grade] || 'bg-secondary'} font-monospace px-2 py-1">
+                                        ${r.grade}
+                                    </span>
+                                </td>
+                                <td><span class="fw-bold text-secondary">${r.grade_point}</span></td>
+                                <td>
+                                    ${r.grade === 'F' 
+                                        ? '<span class="badge bg-danger bg-opacity-10 text-danger border border-danger border-opacity-25">FAIL</span>' 
+                                        : '<span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25">PASS</span>'}
+                                </td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    `).join('');
+}
+
+function populateReevalSubjects(data) {
+    const sel = document.getElementById('reevalSubjectSelect');
+    const subjects = [];
+    (data.semesters || []).forEach(sem => {
+        (sem.records || []).forEach(r => {
+            subjects.push(`${r.subject_code} - ${r.subject_name}`);
+        });
+    });
+
+    sel.innerHTML = subjects.map(s => `<option value="${s}">${s}</option>`).join('');
+}
+
+function openTranscript() {
+    if (currentStudentId) {
+        window.open(`/students/${currentStudentId}/transcript/`, '_blank');
+    }
+}
+
+function submitReeval() {
+    showToast('Re-evaluation application submitted to Controller of Examinations office.', 'success');
+    bootstrap.Modal.getInstance(document.getElementById('reevalModal')).hide();
+}
+</script>
+{% endblock %}

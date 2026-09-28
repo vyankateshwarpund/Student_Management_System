@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Official Examination Hall Ticket — EduManager</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700&family=Inter:wght@400;500;600;700&family=Libre+Barcode+39+Text&display=swap" rel="stylesheet">
+    <!-- Bootstrap 5 -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <style>
+        body {
+            background-color: #f1f5f9;
+            font-family: 'Inter', sans-serif;
+            color: #0f172a;
+            padding: 2rem 1rem;
+        }
+
+        .admit-paper {
+            max-width: 880px;
+            margin: auto;
+            background: #ffffff;
+            border: 2px solid #0f172a;
+            padding: 2.5rem;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+            position: relative;
+        }
+
+        /* Watermark */
+        .admit-paper::before {
+            content: "HALL TICKET";
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) rotate(-25deg);
+            font-size: 5rem;
+            font-weight: 900;
+            color: rgba(15, 23, 42, 0.03);
+            pointer-events: none;
+            letter-spacing: 0.15em;
+            z-index: 0;
+        }
+
+        .uni-header {
+            text-align: center;
+            border-bottom: 2px solid #0f172a;
+            padding-bottom: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .uni-title {
+            font-family: 'Cinzel', serif;
+            font-size: 1.6rem;
+            font-weight: 700;
+            letter-spacing: 0.05em;
+            color: #0f172a;
+            text-transform: uppercase;
+        }
+
+        .student-photo-box {
+            width: 110px;
+            height: 130px;
+            border: 2px dashed #94a3b8;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #f8fafc;
+            overflow: hidden;
+        }
+
+        .barcode-text {
+            font-family: 'Libre Barcode 39 Text', cursive;
+            font-size: 2.2rem;
+            line-height: 1;
+        }
+
+        .table-papers {
+            border: 1px solid #0f172a;
+            font-size: 0.88rem;
+        }
+
+        .table-papers th {
+            background-color: #0f172a;
+            color: #ffffff;
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            letter-spacing: 0.05em;
+            padding: 8px 10px;
+        }
+
+        .table-papers td {
+            border: 1px solid #cbd5e1;
+            padding: 8px 10px;
+            vertical-align: middle;
+        }
+
+        .signature-box {
+            height: 60px;
+            border-bottom: 1px solid #0f172a;
+            margin-bottom: 5px;
+        }
+
+        @media print {
+            body {
+                background: none;
+                padding: 0;
+            }
+            .admit-paper {
+                box-shadow: none;
+                border: 2px solid #000;
+                padding: 1.5rem;
+            }
+            .no-print {
+                display: none !important;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Controls Bar -->
+    <div class="container mb-4 no-print" style="max-width: 880px;">
+        <div class="card border-0 shadow-sm p-3 bg-white">
+            <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
+                <a href="/exams/" class="btn btn-outline-secondary btn-sm">
+                    <i class="bi bi-arrow-left me-1"></i> Back to Timetables
+                </a>
+                <div class="d-flex gap-2 align-items-center flex-wrap">
+                    <select id="switchExam" class="form-select form-select-sm" style="min-width: 220px;" onchange="fetchHallTicket()">
+                        <option value="">Loading Exams...</option>
+                    </select>
+                    <input type="text" id="switchStudentId" class="form-control form-control-sm" placeholder="Student ID (e.g. 2026CSE001)" style="width: 170px;">
+                    <button class="btn btn-sm btn-dark" onclick="fetchHallTicket()">Search</button>
+                    <button class="btn btn-sm btn-primary" onclick="window.print()">
+                        <i class="bi bi-printer-fill me-1"></i> Print Hall Ticket
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Hall Ticket Document -->
+    <div class="admit-paper" id="hallTicketCard">
+        <!-- University Header -->
+        <div class="uni-header position-relative">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <div style="width: 70px;">
+                    <i class="bi bi-mortarboard-fill fs-1 text-primary"></i>
+                </div>
+                <div>
+                    <div class="uni-title">National Metropolitan University</div>
+                    <div class="text-secondary small fw-semibold text-uppercase tracking-wider">Office of the Controller of Examinations</div>
+                    <div class="badge bg-dark text-white px-3 py-1 mt-1 text-uppercase fw-bold" style="letter-spacing: 0.1em; font-size: 0.82rem;">
+                        Examination Admit Card / Hall Ticket
+                    </div>
+                </div>
+                <div style="width: 70px; text-align: right;">
+                    <img id="qrCodeImg" src="https://api.qrserver.com/v1/create-qr-code/?size=70x70&data=EduManager-HT" alt="QR Code" style="width: 65px; height: 65px; border: 1px solid #cbd5e1; padding: 2px;">
+                </div>
+            </div>
+            <div class="text-center small text-muted">
+                <span id="ticketExamTitle" class="fw-bold text-dark">Mid-Semester Examination</span> &bull; 
+                Academic Session: <span id="ticketAcademicYear" class="fw-semibold">2026-2027</span>
+            </div>
+        </div>
+
+        <!-- Student Particulars Grid -->
+        <div class="row g-3 mb-4 align-items-center">
+            <div class="col-8">
+                <table class="table table-sm table-borderless mb-0" style="font-size: 0.9rem;">
+                    <tr>
+                        <td class="text-muted fw-semibold" style="width: 140px;">Candidate Name:</td>
+                        <td class="fw-bold text-dark text-uppercase" id="ticketStudentName">Loading...</td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted fw-semibold">Student ID / Roll No:</td>
+                        <td class="fw-bold text-primary font-monospace" id="ticketStudentId">Loading...</td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted fw-semibold">Course & Branch:</td>
+                        <td id="ticketCourse">Loading...</td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted fw-semibold">Department:</td>
+                        <td id="ticketDepartment">Loading...</td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted fw-semibold">Current Semester:</td>
+                        <td id="ticketSemester">Loading...</td>
+                    </tr>
+                </table>
+            </div>
+            <div class="col-4 d-flex flex-column align-items-end justify-content-center">
+                <div class="student-photo-box mb-1" id="photoBox">
+                    <i class="bi bi-person-bounding-box fs-1 text-secondary opacity-50"></i>
+                </div>
+                <div class="barcode-text text-center" id="barcodeDisplay">*HT2026*</div>
+            </div>
+        </div>
+
+        <!-- Registered Papers Table -->
+        <div class="mb-4">
+            <div class="fw-bold small text-uppercase text-secondary mb-2">Schedule of Papers to Appear</div>
+            <table class="table table-papers w-100 mb-0">
+                <thead>
+                    <tr>
+                        <th style="width: 15%;">Paper Code</th>
+                        <th style="width: 32%;">Subject Title</th>
+                        <th style="width: 16%;">Date</th>
+                        <th style="width: 17%;">Timings</th>
+                        <th style="width: 20%;">Hall / Room</th>
+                    </tr>
+                </thead>
+                <tbody id="ticketPapersBody">
+                    <tr><td colspan="5" class="text-center py-3 text-muted">Loading registered examination papers...</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Candidate Instructions -->
+        <div class="p-3 bg-light border rounded-2 mb-4" style="font-size: 0.78rem; line-height: 1.45;">
+            <div class="fw-bold text-dark text-uppercase mb-1">Important Instructions for Candidates:</div>
+            <div id="ticketInstructions" class="text-secondary" style="white-space: pre-line;">
+                1. Candidates must arrive at the examination hall 15 minutes before scheduled commencement.
+                2. Electronic gadgets, mobile phones, smartwatches, and programmable calculators are strictly prohibited.
+                3. Hall ticket and institutional photo ID card are mandatory for entry.
+                4. No candidate will be permitted to leave the examination hall in the first 60 minutes.
+                5. Use blue or black ballpoint pen only for writing answers.
+            </div>
+        </div>
+
+        <!-- Signatures Footer -->
+        <div class="row pt-4 mt-2">
+            <div class="col-4 text-center">
+                <div class="signature-box"></div>
+                <div class="small fw-semibold text-secondary">Candidate's Signature</div>
+                <div class="text-muted" style="font-size: 0.7rem;">(To be signed in presence of invigilator)</div>
+            </div>
+            <div class="col-4 text-center">
+                <div class="signature-box d-flex align-items-center justify-content-center">
+                    <span class="text-muted fst-italic small">Verified on entry</span>
+                </div>
+                <div class="small fw-semibold text-secondary">Hall Invigilator's Seal</div>
+            </div>
+            <div class="col-4 text-center">
+                <div class="signature-box d-flex align-items-center justify-content-center">
+                    <span class="font-monospace fw-bold text-primary" style="font-size: 0.85rem; letter-spacing: 0.05em;">DR. R. S. SHARMA</span>
+                </div>
+                <div class="small fw-bold text-dark">Controller of Examinations</div>
+                <div class="text-muted" style="font-size: 0.7rem;">National Metropolitan University</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="/static/js/api.js"></script>
+    <script>
+        const urlParams = new URLSearchParams(window.location.search);
+        let selectedExamId = urlParams.get('exam_id');
+        let selectedStudentId = urlParams.get('student_id') || '';
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            await loadExamsDropdown();
+            await fetchHallTicket();
+        });
+
+        async function loadExamsDropdown() {
+            try {
+                const res = await api.get('/exams/');
+                const exams = res.results || res.data || [];
+                const sel = document.getElementById('switchExam');
+                if (exams.length) {
+                    sel.innerHTML = exams.map(e => `<option value="${e.id}" ${selectedExamId == e.id ? 'selected' : ''}>${e.title}</option>`).join('');
+                    if (!selectedExamId) {
+                        selectedExamId = exams[0].id;
+                        sel.value = selectedExamId;
+                    }
+                }
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
+        async function fetchHallTicket() {
+            const examSelect = document.getElementById('switchExam');
+            const studentInput = document.getElementById('switchStudentId');
+            
+            const examId = examSelect.value || selectedExamId;
+            const stuParam = studentInput.value.trim() || selectedStudentId;
+
+            if (!examId) return;
+
+            let url = `/exams/${examId}/hall-ticket/`;
+            if (stuParam) {
+                url += `?student_id=${encodeURIComponent(stuParam)}`;
+            }
+
+            try {
+                const res = await api.get(url);
+                const data = res.data;
+
+                // Populate template
+                document.getElementById('ticketExamTitle').textContent = data.exam_title || 'Institutional Examination';
+                document.getElementById('ticketAcademicYear').textContent = data.academic_year || '2026-2027';
+                document.getElementById('ticketStudentName').textContent = data.student_name || 'N/A';
+                document.getElementById('ticketStudentId').textContent = data.student_id || 'N/A';
+                document.getElementById('ticketCourse').textContent = data.course || 'N/A';
+                document.getElementById('ticketDepartment').textContent = data.department || 'N/A';
+                document.getElementById('ticketSemester').textContent = 'Semester ' + (data.semester || '1');
+
+                if (data.instructions) {
+                    document.getElementById('ticketInstructions').textContent = data.instructions;
+                }
+
+                // Barcode & QR
+                const barcodeData = `*HT-${data.student_id}*`;
+                document.getElementById('barcodeDisplay').textContent = barcodeData;
+                const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=70x70&data=HT:${data.student_id}|EXAM:${examId}`;
+                document.getElementById('qrCodeImg').src = qrUrl;
+
+                // Papers
+                const papersBody = document.getElementById('ticketPapersBody');
+                if (data.papers && data.papers.length > 0) {
+                    papersBody.innerHTML = data.papers.map(p => `
+                        <tr>
+                            <td class="font-monospace fw-bold text-dark">${p.subject_code}</td>
+                            <td class="fw-semibold text-dark">${p.subject_name}</td>
+                            <td>${p.date}</td>
+                            <td>${p.start_time} - ${p.end_time}</td>
+                            <td><span class="badge bg-light text-dark border">${p.room_number}</span></td>
+                        </tr>
+                    `).join('');
+                } else {
+                    papersBody.innerHTML = `<tr><td colspan="5" class="text-center py-3 text-muted">No papers scheduled for this course and semester in this exam series.</td></tr>`;
+                }
+
+            } catch (err) {
+                console.error(err);
+                alert(err.message || 'Failed to generate hall ticket. Ensure student record exists.');
+            }
+        }
+    </script>
+</body>
+</html>

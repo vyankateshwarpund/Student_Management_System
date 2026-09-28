@@ -1,0 +1,85 @@
+{% extends 'base.html' %}
+
+{% block title %}Books Issued — EduManager Library{% endblock %}
+
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
+    <div>
+        <h3 class="fw-bold text-dark mb-1">Library Books Issued</h3>
+        <p class="text-muted small mb-0">Track library borrowings, return due dates, and book renewals</p>
+    </div>
+</div>
+
+<div class="card p-0 border-0 shadow-sm overflow-hidden mb-4">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>Accession No</th>
+                    <th>Book Title</th>
+                    <th>Author</th>
+                    <th>Issue Date</th>
+                    <th>Due Date</th>
+                    <th>Status</th>
+                    <th class="text-end">Action</th>
+                </tr>
+            </thead>
+            <tbody id="booksTableBody">
+                <tr><td colspan="7" class="text-center py-4 text-muted">Loading library records...</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', loadBooks);
+
+async function loadBooks() {
+    const tbody = document.getElementById('booksTableBody');
+    try {
+        const res = await api.get('/services/books/');
+        const books = res.results || res.data || [];
+        if (!books.length) {
+            tbody.innerHTML = `<tr><td colspan="7" class="text-center py-4 text-muted">No books currently issued.</td></tr>`;
+            return;
+        }
+
+        tbody.innerHTML = books.map(b => `
+            <tr>
+                <td class="font-monospace fw-bold text-primary">${b.accession_no}</td>
+                <td><div class="fw-bold text-dark">${b.book_title}</div></td>
+                <td><span class="text-secondary">${b.author}</span></td>
+                <td>${b.issue_date}</td>
+                <td><strong class="text-danger">${b.due_date}</strong></td>
+                <td>
+                    <span class="badge ${b.status === 'issued' ? 'bg-primary' : 'bg-success'}">${b.status.toUpperCase()}</span>
+                    ${parseFloat(b.fine_amount) > 0 ? `<span class="badge bg-danger ms-1">Overdue Fine: ₹${parseFloat(b.fine_amount).toFixed(2)}</span>` : ''}
+                </td>
+                <td class="text-end">
+                    ${b.status === 'issued' ? `
+                        <button class="btn btn-sm btn-outline-primary rounded-pill px-3" onclick="renewBook(${b.id})">
+                            <i class="bi bi-arrow-repeat me-1"></i> Renew (14 Days)
+                        </button>
+                    ` : '<span class="text-muted small">Returned</span>'}
+                </td>
+            </tr>
+        `).join('');
+    } catch(e) {
+        console.error(e);
+        tbody.innerHTML = `<tr><td colspan="7" class="text-center text-danger py-4">Failed to load books.</td></tr>`;
+    }
+}
+
+async function renewBook(id) {
+    try {
+        await api.post(`/services/books/${id}/renew/`, {});
+        showToast('Book renewed for 14 additional days!', 'success');
+        loadBooks();
+    } catch(err) {
+        showToast(err.message || 'Renewal failed', 'danger');
+    }
+}
+</script>
+{% endblock %}

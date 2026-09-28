@@ -1,0 +1,257 @@
+{% extends 'base.html' %}
+
+{% block title %}{% if is_edit %}Edit Student #{{ student_id }}{% else %}Add New Student{% endif %} — EduManager{% endblock %}
+
+{% block content %}
+<div class="mb-4">
+    <a href="/students/" class="btn btn-sm btn-link text-decoration-none p-0 mb-2">&larr; Back to Student Directory</a>
+    <h3 class="fw-bold text-dark mb-1">{% if is_edit %}Edit Student Record{% else %}Enroll New Student{% endif %}</h3>
+    <p class="text-muted small mb-0">Fill in the personal, contact, and academic details for this student</p>
+</div>
+
+<div class="card p-4 border-0 shadow-sm rounded-3" style="max-width: 900px;">
+    <form id="studentForm">
+        <!-- Section 1: Academic & Identification -->
+        <h5 class="fw-semibold text-primary border-bottom pb-2 mb-3">Identification & Academic Details</h5>
+        <div class="row g-3 mb-4">
+            <div class="col-md-4">
+                <label class="form-label small fw-semibold text-secondary">Student ID *</label>
+                <input type="text" id="student_id" class="form-control" placeholder="e.g. STU005" required {% if is_edit %}readonly{% endif %}>
+                <div class="form-text small">Unique student registration code</div>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label small fw-semibold text-secondary">Department *</label>
+                <select id="department" class="form-select" required>
+                    <option value="">Select Department</option>
+                </select>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label small fw-semibold text-secondary">Course *</label>
+                <select id="course" class="form-select" required>
+                    <option value="">Select Course</option>
+                </select>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label small fw-semibold text-secondary">Current Semester *</label>
+                <select id="semester" class="form-select" required>
+                    <option value="1">Semester 1</option>
+                    <option value="2">Semester 2</option>
+                    <option value="3">Semester 3</option>
+                    <option value="4">Semester 4</option>
+                    <option value="5">Semester 5</option>
+                    <option value="6">Semester 6</option>
+                    <option value="7">Semester 7</option>
+                    <option value="8">Semester 8</option>
+                </select>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label small fw-semibold text-secondary">Academic Year</label>
+                <input type="number" id="year" class="form-control" placeholder="e.g. 2026" min="2000" max="2099">
+            </div>
+            <div class="col-md-4">
+                <label class="form-label small fw-semibold text-secondary">Status *</label>
+                <select id="status" class="form-select" required>
+                    <option value="active" selected>Active</option>
+                    <option value="inactive">Inactive</option>
+                    <option value="graduated">Graduated</option>
+                    <option value="suspended">Suspended</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- Section 2: Personal Information -->
+        <h5 class="fw-semibold text-primary border-bottom pb-2 mb-3">Personal Information</h5>
+        <div class="row g-3 mb-4">
+            <div class="col-md-6">
+                <label class="form-label small fw-semibold text-secondary">First Name *</label>
+                <input type="text" id="first_name" class="form-control" placeholder="e.g. Rahul" required>
+            </div>
+            <div class="col-md-6">
+                <label class="form-label small fw-semibold text-secondary">Last Name *</label>
+                <input type="text" id="last_name" class="form-control" placeholder="e.g. Patil" required>
+            </div>
+            <div class="col-md-6">
+                <label class="form-label small fw-semibold text-secondary">Email Address *</label>
+                <input type="email" id="email" class="form-control" placeholder="rahul@example.com" required>
+            </div>
+            <div class="col-md-6">
+                <label class="form-label small fw-semibold text-secondary">Phone Number</label>
+                <input type="text" id="phone" class="form-control" placeholder="e.g. 9876543210">
+            </div>
+            <div class="col-md-4">
+                <label class="form-label small fw-semibold text-secondary">Date of Birth</label>
+                <input type="date" id="date_of_birth" class="form-control">
+            </div>
+            <div class="col-md-4">
+                <label class="form-label small fw-semibold text-secondary">Gender</label>
+                <select id="gender" class="form-select">
+                    <option value="">Select Gender</option>
+                    <option value="male">Male</option>
+                    <option value="female">Female</option>
+                    <option value="other">Other</option>
+                </select>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label small fw-semibold text-secondary">Admission Date</label>
+                <input type="date" id="admission_date" class="form-control">
+            </div>
+        </div>
+
+        <!-- Section 3: Contact & Address -->
+        <h5 class="fw-semibold text-primary border-bottom pb-2 mb-3">Residential Address</h5>
+        <div class="row g-3 mb-4">
+            <div class="col-12">
+                <label class="form-label small fw-semibold text-secondary">Street Address</label>
+                <textarea id="address" class="form-control" rows="2" placeholder="House/Flat No., Street, Area..."></textarea>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label small fw-semibold text-secondary">City</label>
+                <input type="text" id="city" class="form-control" placeholder="e.g. Mumbai">
+            </div>
+            <div class="col-md-4">
+                <label class="form-label small fw-semibold text-secondary">State</label>
+                <input type="text" id="state" class="form-control" placeholder="e.g. Maharashtra">
+            </div>
+            <div class="col-md-4">
+                <label class="form-label small fw-semibold text-secondary">Pincode</label>
+                <input type="text" id="pincode" class="form-control" placeholder="e.g. 400001">
+            </div>
+        </div>
+
+        <div class="d-flex justify-content-end gap-2 mt-4 pt-3 border-top">
+            <a href="/students/" class="btn btn-light px-4">Cancel</a>
+            <button type="submit" id="saveBtn" class="btn btn-primary px-4 fw-semibold">
+                {% if is_edit %}Update Student{% else %}Save Student{% endif %}
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const isEdit = {{ is_edit|yesno:"true,false" }};
+const editStudentId = "{{ student_id|default:'' }}";
+let allCourses = [];
+
+async function loadDropdowns() {
+    try {
+        const [deptRes, courseRes] = await Promise.all([
+            api.get('/departments/'),
+            api.get('/courses/')
+        ]);
+
+        const depts = deptRes.data || deptRes.results || [];
+        allCourses = courseRes.data || courseRes.results || [];
+
+        const deptSelect = document.getElementById('department');
+        depts.forEach(d => {
+            deptSelect.insertAdjacentHTML('beforeend', `<option value="${d.id}">${d.name} (${d.code})</option>`);
+        });
+
+        // Filter courses when department changes
+        deptSelect.addEventListener('change', () => {
+            filterCoursesByDept(deptSelect.value);
+        });
+
+    } catch (e) {
+        showToast('Failed to load academic departments or courses', 'danger');
+    }
+}
+
+function filterCoursesByDept(deptId, selectedCourseId = null) {
+    const courseSelect = document.getElementById('course');
+    courseSelect.innerHTML = '<option value="">Select Course</option>';
+
+    const filtered = deptId ? allCourses.filter(c => String(c.department) === String(deptId)) : allCourses;
+    filtered.forEach(c => {
+        const isSel = selectedCourseId && String(c.id) === String(selectedCourseId) ? 'selected' : '';
+        courseSelect.insertAdjacentHTML('beforeend', `<option value="${c.id}" ${isSel}>${c.name} (${c.code})</option>`);
+    });
+}
+
+async function loadExistingStudent() {
+    if (!isEdit || !editStudentId) return;
+
+    try {
+        const res = await api.get(`/students/${editStudentId}/`);
+        const s = res.data;
+
+        document.getElementById('student_id').value = s.student_id;
+        document.getElementById('first_name').value = s.first_name;
+        document.getElementById('last_name').value = s.last_name;
+        document.getElementById('email').value = s.email;
+        document.getElementById('phone').value = s.phone || '';
+        document.getElementById('date_of_birth').value = s.date_of_birth || '';
+        document.getElementById('gender').value = s.gender || '';
+        document.getElementById('admission_date').value = s.admission_date || '';
+        document.getElementById('address').value = s.address || '';
+        document.getElementById('city').value = s.city || '';
+        document.getElementById('state').value = s.state || '';
+        document.getElementById('pincode').value = s.pincode || '';
+        document.getElementById('semester').value = s.semester;
+        document.getElementById('year').value = s.year || '';
+        document.getElementById('status').value = s.status;
+
+        // Set department & course
+        document.getElementById('department').value = s.department;
+        filterCoursesByDept(s.department, s.course);
+
+    } catch (err) {
+        showToast(err.message || 'Failed to load student details', 'danger');
+    }
+}
+
+document.addEventListener('DOMContentLoaded', async () => {
+    if (!auth.requireAuth(['admin'])) return;
+
+    await loadDropdowns();
+    await loadExistingStudent();
+
+    const form = document.getElementById('studentForm');
+    const saveBtn = document.getElementById('saveBtn');
+
+    form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const payload = {
+            student_id: document.getElementById('student_id').value.trim(),
+            first_name: document.getElementById('first_name').value.trim(),
+            last_name: document.getElementById('last_name').value.trim(),
+            email: document.getElementById('email').value.trim(),
+            phone: document.getElementById('phone').value.trim() || null,
+            date_of_birth: document.getElementById('date_of_birth').value || null,
+            gender: document.getElementById('gender').value || null,
+            admission_date: document.getElementById('admission_date').value || null,
+            address: document.getElementById('address').value.trim() || null,
+            city: document.getElementById('city').value.trim() || null,
+            state: document.getElementById('state').value.trim() || null,
+            pincode: document.getElementById('pincode').value.trim() || null,
+            department: parseInt(document.getElementById('department').value),
+            course: parseInt(document.getElementById('course').value),
+            semester: parseInt(document.getElementById('semester').value),
+            year: parseInt(document.getElementById('year').value) || null,
+            status: document.getElementById('status').value
+        };
+
+        saveBtn.disabled = true;
+        saveBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Saving...';
+
+        try {
+            if (isEdit) {
+                await api.put(`/students/${editStudentId}/`, payload);
+                showToast('Student record updated successfully!', 'success');
+            } else {
+                await api.post('/students/', payload);
+                showToast('Student enrolled successfully!', 'success');
+            }
+            setTimeout(() => window.location.href = '/students/', 800);
+        } catch (err) {
+            showToast(err.message || 'Error saving student record', 'danger');
+            saveBtn.disabled = false;
+            saveBtn.innerHTML = isEdit ? 'Update Student' : 'Save Student';
+        }
+    });
+});
+</script>
+{% endblock %}

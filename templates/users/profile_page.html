@@ -1,0 +1,155 @@
+{% extends 'base.html' %}
+
+{% block title %}My Profile — EduManager{% endblock %}
+
+{% block content %}
+<div class="mb-4">
+    <h3 class="fw-bold text-dark mb-1">User Account & Profile</h3>
+    <p class="text-muted small mb-0">Manage your personal credentials, contact numbers, and security settings</p>
+</div>
+
+<div class="row g-4" style="max-width: 900px;">
+    <!-- Profile Info & Edit -->
+    <div class="col-lg-6">
+        <div class="card p-4 border-0 shadow-sm h-100">
+            <h5 class="fw-semibold text-primary border-bottom pb-2 mb-3">Profile Information</h5>
+            <form id="profileForm">
+                <div class="mb-3">
+                    <label class="form-label small fw-semibold text-secondary">Username</label>
+                    <input type="text" id="profUsername" class="form-control bg-light" readonly>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label small fw-semibold text-secondary">Email Address</label>
+                    <input type="email" id="profEmail" class="form-control bg-light" readonly>
+                </div>
+                <div class="row g-2 mb-3">
+                    <div class="col-6">
+                        <label class="form-label small fw-semibold text-secondary">First Name</label>
+                        <input type="text" id="profFirstName" class="form-control" required>
+                    </div>
+                    <div class="col-6">
+                        <label class="form-label small fw-semibold text-secondary">Last Name</label>
+                        <input type="text" id="profLastName" class="form-control" required>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label small fw-semibold text-secondary">Phone Number</label>
+                    <input type="text" id="profPhone" class="form-control" placeholder="e.g. 9876543210">
+                </div>
+                <button type="submit" id="saveProfBtn" class="btn btn-primary w-100 py-2 fw-semibold mt-2">
+                    Update Profile
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Password Change Form -->
+    <div class="col-lg-6">
+        <div class="card p-4 border-0 shadow-sm h-100">
+            <h5 class="fw-semibold text-primary border-bottom pb-2 mb-3">Security & Password</h5>
+            <form id="passwordForm">
+                <div class="mb-3">
+                    <label class="form-label small fw-semibold text-secondary">Current Password *</label>
+                    <input type="password" id="oldPassword" class="form-control" required>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label small fw-semibold text-secondary">New Password *</label>
+                    <input type="password" id="newPassword" class="form-control" minlength="8" required>
+                    <div class="form-text small">At least 8 characters</div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label small fw-semibold text-secondary">Confirm New Password *</label>
+                    <input type="password" id="confirmNewPassword" class="form-control" minlength="8" required>
+                </div>
+                <button type="submit" id="savePwdBtn" class="btn btn-outline-primary w-100 py-2 fw-semibold mt-2">
+                    Change Password
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+async function loadProfile() {
+    try {
+        const res = await api.get('/auth/profile/');
+        const u = res.data;
+        document.getElementById('profUsername').value = u.username;
+        document.getElementById('profEmail').value = u.email;
+        document.getElementById('profFirstName').value = u.first_name || '';
+        document.getElementById('profLastName').value = u.last_name || '';
+        document.getElementById('profPhone').value = u.phone || '';
+    } catch (err) {
+        showToast(err.message || 'Failed to load profile', 'danger');
+    }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    if (!auth.requireAuth()) return;
+    loadProfile();
+
+    // Update Profile Info
+    document.getElementById('profileForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const payload = {
+            first_name: document.getElementById('profFirstName').value.trim(),
+            last_name: document.getElementById('profLastName').value.trim(),
+            phone: document.getElementById('profPhone').value.trim() || null
+        };
+
+        const btn = document.getElementById('saveProfBtn');
+        btn.disabled = true;
+
+        try {
+            const res = await api.patch('/auth/profile/', payload);
+            showToast('Profile updated successfully', 'success');
+            // update cached user
+            const current = auth.getUser();
+            if (current) {
+                current.first_name = res.data.first_name;
+                current.last_name = res.data.last_name;
+                current.full_name = res.data.full_name;
+                localStorage.setItem('user', JSON.stringify(current));
+                initUserNavbar();
+            }
+        } catch (err) {
+            showToast(err.message || 'Failed to update profile', 'danger');
+        } finally {
+            btn.disabled = false;
+        }
+    });
+
+    // Change Password
+    document.getElementById('passwordForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const oldPwd = document.getElementById('oldPassword').value;
+        const newPwd = document.getElementById('newPassword').value;
+        const confPwd = document.getElementById('confirmNewPassword').value;
+
+        if (newPwd !== confPwd) {
+            showToast('New passwords do not match', 'danger');
+            return;
+        }
+
+        const btn = document.getElementById('savePwdBtn');
+        btn.disabled = true;
+
+        try {
+            await api.post('/auth/change-password/', {
+                old_password: oldPwd,
+                new_password: newPwd,
+                new_password_confirm: confPwd
+            });
+            showToast('Password changed successfully', 'success');
+            document.getElementById('passwordForm').reset();
+        } catch (err) {
+            showToast(err.message || 'Failed to change password', 'danger');
+        } finally {
+            btn.disabled = false;
+        }
+    });
+});
+</script>
+{% endblock %}

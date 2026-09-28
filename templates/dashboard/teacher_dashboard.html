@@ -1,0 +1,207 @@
+{% extends 'base.html' %}
+
+{% block title %}Teacher Dashboard — EduManager{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h3 class="fw-bold text-dark mb-1">Teacher Dashboard</h3>
+        <p class="text-muted small mb-0">Overview of assigned subjects, attendance records, and academic marks</p>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="/attendance/" class="btn btn-primary btn-sm"><i class="bi bi-calendar-check me-1"></i> Mark Attendance</a>
+        <a href="/marks/" class="btn btn-outline-primary btn-sm"><i class="bi bi-award me-1"></i> Enter Marks</a>
+    </div>
+</div>
+
+<!-- Teacher Profile Banner -->
+<div class="card p-3 mb-4 bg-white border-0 shadow-sm">
+    <div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
+        <div class="d-flex align-items-center gap-3">
+            <div class="stat-icon bg-primary text-white rounded-circle fs-3" style="width: 56px; height: 56px;">
+                <i class="bi bi-person-workspace"></i>
+            </div>
+            <div>
+                <h5 class="fw-bold mb-0" id="teacherName">Loading Teacher...</h5>
+                <div class="text-muted small">
+                    <span id="teacherEmpId" class="badge bg-light text-dark border me-2">-</span>
+                    <span id="teacherDept">-</span>
+                </div>
+            </div>
+        </div>
+        <div class="d-flex gap-4">
+            <div>
+                <div class="text-muted small">Qualification</div>
+                <div class="fw-semibold" id="teacherQual">-</div>
+            </div>
+            <div>
+                <div class="text-muted small">Contact</div>
+                <div class="fw-semibold" id="teacherPhone">-</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Metrics Row -->
+<div class="row g-3 mb-4">
+    <div class="col-sm-6 col-xl-3">
+        <div class="card p-3">
+            <div class="d-flex align-items-center gap-3">
+                <div class="stat-icon bg-primary bg-opacity-10 text-primary">
+                    <i class="bi bi-people-fill"></i>
+                </div>
+                <div>
+                    <span class="text-muted small text-uppercase fw-semibold">Assigned Students</span>
+                    <h3 class="fw-bold mb-0" id="assignedStudents">-</h3>
+                    <small class="text-muted">In your curriculum</small>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+        <div class="card p-3">
+            <div class="d-flex align-items-center gap-3">
+                <div class="stat-icon bg-info bg-opacity-10 text-info">
+                    <i class="bi bi-book-fill"></i>
+                </div>
+                <div>
+                    <span class="text-muted small text-uppercase fw-semibold">Subjects</span>
+                    <h3 class="fw-bold mb-0" id="totalSubjects">-</h3>
+                    <small class="text-muted">Assigned courses</small>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+        <div class="card p-3">
+            <div class="d-flex align-items-center gap-3">
+                <div class="stat-icon bg-success bg-opacity-10 text-success">
+                    <i class="bi bi-calendar2-check-fill"></i>
+                </div>
+                <div>
+                    <span class="text-muted small text-uppercase fw-semibold">Today's Attendance</span>
+                    <h3 class="fw-bold mb-0" id="todayAttendance">-</h3>
+                    <small class="text-success" id="todayPresent">- present</small>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+        <div class="card p-3">
+            <div class="d-flex align-items-center gap-3">
+                <div class="stat-icon bg-warning bg-opacity-10 text-warning">
+                    <i class="bi bi-percent"></i>
+                </div>
+                <div>
+                    <span class="text-muted small text-uppercase fw-semibold">Presence Rate</span>
+                    <h3 class="fw-bold mb-0" id="attendanceRate">-%</h3>
+                    <small class="text-muted">Overall recorded</small>
+                </div>
+            </div>
+        </div>
+    </div>
+<!-- Campus Notices Bulletin -->
+{% include 'partials/_notices.html' %}
+
+<!-- Subjects & Recent Marks Row -->
+<div class="row g-4">
+    <div class="col-lg-5">
+        <div class="card p-3 h-100">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h6 class="fw-bold text-dark mb-0">Assigned Subjects</h6>
+                <span class="badge bg-light text-secondary">Teaching</span>
+            </div>
+            <div class="list-group list-group-flush" id="subjectsList">
+                <div class="text-center py-3 text-muted">Loading subjects...</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-7">
+        <div class="card p-3 h-100">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h6 class="fw-bold text-dark mb-0">Recently Entered Marks</h6>
+                <a href="/marks/" class="btn btn-sm btn-link text-decoration-none">Manage Marks &rarr;</a>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead>
+                        <tr>
+                            <th>Student ID</th>
+                            <th>Student Name</th>
+                            <th>Subject</th>
+                            <th>Total</th>
+                            <th>Grade</th>
+                        </tr>
+                    </thead>
+                    <tbody id="recentMarksTable">
+                        <tr><td colspan="5" class="text-center py-3 text-muted">Loading marks...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', async () => {
+    if (!auth.requireAuth(['teacher', 'admin'])) return;
+
+    try {
+        const res = await api.get('/dashboard/teacher/');
+        const data = res.data;
+
+        // Populate Teacher Profile
+        document.getElementById('teacherName').textContent = data.teacher_profile.name;
+        document.getElementById('teacherEmpId').textContent = data.teacher_profile.employee_id;
+        document.getElementById('teacherDept').textContent = data.teacher_profile.department;
+        document.getElementById('teacherQual').textContent = data.teacher_profile.qualification || 'N/A';
+        document.getElementById('teacherPhone').textContent = data.teacher_profile.phone || 'N/A';
+
+        // Populate Metrics
+        document.getElementById('assignedStudents').textContent = data.assigned_students_count;
+        document.getElementById('totalSubjects').textContent = data.subjects.length;
+        document.getElementById('todayAttendance').textContent = `${data.todays_attendance.total} marked`;
+        document.getElementById('todayPresent').textContent = `${data.todays_attendance.present} present, ${data.todays_attendance.absent} absent`;
+        document.getElementById('attendanceRate').textContent = `${data.attendance_stats.attendance_rate}%`;
+
+        // Populate Subjects List
+        const subjContainer = document.getElementById('subjectsList');
+        if (!data.subjects.length) {
+            subjContainer.innerHTML = '<div class="text-center py-3 text-muted">No subjects assigned yet.</div>';
+        } else {
+            subjContainer.innerHTML = data.subjects.map(s => `
+                <div class="list-group-item d-flex justify-content-between align-items-center px-0 py-2">
+                    <div>
+                        <div class="fw-semibold text-dark">${s.name}</div>
+                        <small class="text-muted">${s.course__name || ''} &bull; Sem ${s.semester}</small>
+                    </div>
+                    <span class="badge bg-primary bg-opacity-10 text-primary">${s.code}</span>
+                </div>
+            `).join('');
+        }
+
+        // Populate Recent Marks Table
+        const marksTable = document.getElementById('recentMarksTable');
+        if (!data.recent_marks.length) {
+            marksTable.innerHTML = '<tr><td colspan="5" class="text-center py-3 text-muted">No marks recorded yet.</td></tr>';
+        } else {
+            marksTable.innerHTML = data.recent_marks.map(m => `
+                <tr>
+                    <td class="fw-semibold text-primary">${m.student__student_id}</td>
+                    <td>${m.student__first_name} ${m.student__last_name}</td>
+                    <td>${m.subject__name}</td>
+                    <td class="fw-bold">${m.total_marks}</td>
+                    <td><span class="badge bg-success">${m.grade}</span></td>
+                </tr>
+            `).join('');
+        }
+
+    } catch (err) {
+        showToast(err.message || 'Failed to load teacher dashboard', 'danger');
+    }
+});
+</script>
+{% endblock %}

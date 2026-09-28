@@ -1,0 +1,56 @@
+{% extends 'base.html' %}
+
+{% block title %}Study Materials & Resources — EduManager{% endblock %}
+
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
+    <div>
+        <h3 class="fw-bold text-dark mb-1">Study Materials</h3>
+        <p class="text-muted small mb-0">Download lecture notes, formula handbooks, and reference slides</p>
+    </div>
+</div>
+
+<div class="row g-3" id="materialsGrid">
+    <div class="col-12 text-center py-4 text-muted">Loading study materials...</div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', async () => {
+    const grid = document.getElementById('materialsGrid');
+    try {
+        const res = await api.get('/services/materials/');
+        const materials = res.results || res.data || [];
+        if (!materials.length) {
+            grid.innerHTML = `<div class="col-12 text-center py-4 text-muted">No study materials uploaded yet.</div>`;
+            return;
+        }
+
+        grid.innerHTML = materials.map(m => `
+            <div class="col-md-6 col-lg-4">
+                <div class="card p-4 border-0 shadow-sm h-100 d-flex flex-column justify-content-between">
+                    <div>
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <span class="badge bg-primary bg-opacity-10 text-primary font-monospace">${m.subject_code}</span>
+                            <span class="text-muted small">${new Date(m.uploaded_at).toLocaleDateString()}</span>
+                        </div>
+                        <h6 class="fw-bold text-dark mb-2">${m.title}</h6>
+                        <p class="text-secondary small mb-3">${m.description || 'Reference material for semester studies.'}</p>
+                    </div>
+                    <div class="pt-3 border-top d-flex justify-content-between align-items-center mt-auto">
+                        <span class="small text-muted"><i class="bi bi-person-badge me-1"></i> ${m.teacher_name || 'Faculty'}</span>
+                        <a href="${m.external_url || '#'}" target="_blank" class="btn btn-sm btn-outline-primary rounded-pill px-3">
+                            <i class="bi bi-download me-1"></i> Download
+                        </a>
+                    </div>
+                </div>
+            </div>
+        `).join('');
+    } catch(e) {
+        console.error(e);
+        grid.innerHTML = `<div class="col-12 text-center text-danger py-4">Failed to load study materials.</div>`;
+    }
+});
+</script>
+{% endblock %}

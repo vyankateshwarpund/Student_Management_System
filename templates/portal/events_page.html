@@ -1,0 +1,56 @@
+{% extends 'base.html' %}
+
+{% block title %}Campus Events & Workshops — EduManager{% endblock %}
+
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
+    <div>
+        <h3 class="fw-bold text-dark mb-1">Campus Events & Activities</h3>
+        <p class="text-muted small mb-0">Discover upcoming seminars, cultural fests, tech symposiums, and competitions</p>
+    </div>
+</div>
+
+<div class="row g-3" id="eventsGrid">
+    <div class="col-12 text-center py-4 text-muted">Loading events...</div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', async () => {
+    const grid = document.getElementById('eventsGrid');
+    try {
+        const res = await api.get('/services/events/?event_type=event');
+        const events = res.results || res.data || [];
+        if (!events.length) {
+            grid.innerHTML = `<div class="col-12 text-center py-4 text-muted">No upcoming campus events.</div>`;
+            return;
+        }
+
+        grid.innerHTML = events.map(e => `
+            <div class="col-md-6">
+                <div class="card p-4 border-0 shadow-sm h-100 d-flex flex-column justify-content-between">
+                    <div>
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25">Campus Event</span>
+                            <span class="text-muted small fw-bold font-monospace">${e.start_date}</span>
+                        </div>
+                        <h5 class="fw-bold text-dark mb-2">${e.title}</h5>
+                        <p class="text-secondary small mb-3">${e.description || 'Institutional event organized by faculty and student clubs.'}</p>
+                    </div>
+                    <div class="pt-3 border-top d-flex justify-content-between align-items-center mt-auto">
+                        <span class="small text-muted"><i class="bi bi-geo-alt me-1 text-danger"></i> ${e.location}</span>
+                        <button class="btn btn-sm btn-primary rounded-pill px-3" onclick="showToast('You are registered for this event!', 'success')">
+                            RSVP / Register
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `).join('');
+    } catch(err) {
+        console.error(err);
+        grid.innerHTML = `<div class="col-12 text-center text-danger py-4">Failed to load events.</div>`;
+    }
+});
+</script>
+{% endblock %}

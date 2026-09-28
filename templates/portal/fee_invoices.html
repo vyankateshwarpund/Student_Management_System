@@ -1,0 +1,160 @@
+{% extends 'base.html' %}
+
+{% block title %}Fee Invoices — EduManager{% endblock %}
+
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
+    <div>
+        <h3 class="fw-bold text-dark mb-1">Fee Invoices</h3>
+        <p class="text-muted small mb-0">Review tuition invoices, quarterly payment installments, and dues</p>
+    </div>
+    <div class="d-flex gap-2">
+        <button class="btn btn-outline-secondary btn-sm" onclick="exportTableToCSV('#invoiceTableBody', 'fee_invoices.csv')">
+            <i class="bi bi-file-earmark-spreadsheet me-1 text-success"></i> Export CSV
+        </button>
+    </div>
+</div>
+
+<!-- Invoice List Card -->
+<div class="card p-0 border-0 shadow-sm overflow-hidden mb-4">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>Invoice No</th>
+                    <th>Description</th>
+                    <th>Due Date</th>
+                    <th>Total Amount</th>
+                    <th>Paid Amount</th>
+                    <th>Balance Due</th>
+                    <th>Status</th>
+                    <th class="text-end">Action</th>
+                </tr>
+            </thead>
+            <tbody id="invoiceTableBody">
+                <tr><td colspan="8" class="text-center py-4 text-muted">Loading invoices...</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Modal: Pay Invoice -->
+<div class="modal fade" id="payModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header border-0 pb-0">
+                <h5 class="modal-title fw-bold">Pay Fee Invoice</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="payForm">
+                <input type="hidden" id="payInvoiceId">
+                <div class="modal-body py-3">
+                    <div class="p-3 bg-light rounded-2 mb-3">
+                        <div class="small text-muted" id="payInvoiceTitle">Invoice</div>
+                        <h4 class="fw-bold text-primary mt-1 mb-0" id="payBalanceAmount">₹0.00</h4>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold text-secondary">Payment Amount (₹) *</label>
+                        <input type="number" id="payInputAmount" class="form-control" step="0.01" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold text-secondary">Payment Method *</label>
+                        <select id="payMethod" class="form-select">
+                            <option value="UPI (Google Pay / PhonePe / Paytm / BHIM)">UPI (Google Pay / PhonePe / Paytm / BHIM)</option>
+                            <option value="Net Banking (SBI / HDFC / ICICI / Axis)">Net Banking (SBI / HDFC / ICICI / Axis)</option>
+                            <option value="Debit Card (RuPay / Visa / MasterCard)">Debit Card (RuPay / Visa / MasterCard)</option>
+                            <option value="NEFT / RTGS Challan">NEFT / RTGS Challan</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 pt-0">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-success px-4"><i class="bi bi-shield-check me-1"></i> Confirm Payment</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    if (!auth.requireAuth(['student', 'admin'])) return;
+    loadInvoices();
+});
+
+async function loadInvoices() {
+    const tbody = document.getElementById('invoiceTableBody');
+    try {
+        const res = await api.get('/fees/invoices/');
+        const invoices = res.results || res.data || [];
+        if (!invoices.length) {
+            tbody.innerHTML = `<tr><td colspan="8" class="text-center py-4 text-muted">No fee invoices found.</td></tr>`;
+            return;
+        }
+
+        const fmt = (num) => '₹' + Number(num || 0).toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+
+        tbody.innerHTML = invoices.map(inv => {
+            const statusBadges = {
+                'paid': '<span class="badge bg-success">Paid</span>',
+                'partial': '<span class="badge bg-warning text-dark">Partially Paid</span>',
+                'unpaid': '<span class="badge bg-danger">Unpaid</span>'
+            };
+            return `
+                <tr>
+                    <td class="font-monospace fw-bold text-primary">${inv.invoice_no}</td>
+                    <td>
+                        <div class="fw-semibold text-dark">${inv.title}</div>
+                        <span class="text-muted small">${inv.academic_session}</span>
+                    </td>
+                    <td>${inv.due_date}</td>
+                    <td class="fw-bold text-dark">${fmt(inv.total_amount)}</td>
+                    <td class="text-success fw-semibold">${fmt(inv.paid_amount)}</td>
+                    <td class="fw-bold text-danger">${fmt(inv.balance_amount)}</td>
+                    <td>${statusBadges[inv.status] || inv.status}</td>
+                    <td class="text-end">
+                        ${inv.status !== 'paid' ? `
+                            <button class="btn btn-sm btn-primary rounded-pill px-3" onclick="openPayModal(${inv.id}, '${inv.invoice_no} - ${inv.title.replace(/'/g, "\\'")}', ${inv.balance_amount})">
+                                Pay Now
+                            </button>
+                        ` : `
+                            <button class="btn btn-sm btn-light border text-muted" disabled>Settled</button>
+                        `}
+                    </td>
+                </tr>
+            `;
+        }).join('');
+    } catch(e) {
+        console.error(e);
+        tbody.innerHTML = `<tr><td colspan="8" class="text-center text-danger py-4">Failed to load invoices.</td></tr>`;
+    }
+}
+
+function openPayModal(id, title, balance) {
+    const fmt = (num) => '₹' + Number(num || 0).toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+    document.getElementById('payInvoiceId').value = id;
+    document.getElementById('payInvoiceTitle').textContent = title;
+    document.getElementById('payBalanceAmount').textContent = fmt(balance);
+    document.getElementById('payInputAmount').value = balance;
+    new bootstrap.Modal(document.getElementById('payModal')).show();
+}
+
+document.getElementById('payForm')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const id = document.getElementById('payInvoiceId').value;
+    const amount = document.getElementById('payInputAmount').value;
+    const method = document.getElementById('payMethod').value;
+
+    try {
+        await api.post(`/fees/invoices/${id}/pay/`, { amount: amount, payment_method: method });
+        showToast('Payment completed successfully! Receipt generated.', 'success');
+        bootstrap.Modal.getInstance(document.getElementById('payModal')).hide();
+        loadInvoices();
+    } catch(err) {
+        showToast(err.message || 'Payment failed', 'danger');
+    }
+});
+</script>
+{% endblock %}

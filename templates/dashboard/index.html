@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Redirecting...</title>
+    <script src="/static/js/api.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            if (!auth.isAuthenticated()) {
+                window.location.href = '/login/';
+            } else {
+                const role = auth.getRole();
+                if (role === 'admin') window.location.href = '/dashboard/admin/';
+                else if (role === 'teacher') window.location.href = '/dashboard/teacher/';
+                else window.location.href = '/dashboard/student/';
+            }
+        });
+    </script>
+</head>
+<body style="font-family: sans-serif; display: flex; align-items: center; justify-content: center; height: 100vh; background: #f8fafc;">
+    <div style="text-align: center;">
+        <h4 style="color: #4f46e5;">Student Management System</h4>
+        <p style="color: #64748b;">Loading your workspace...</p>
+    </div>
+</body>
+</html>

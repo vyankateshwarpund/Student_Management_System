@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Student Management System{% endblock %}</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <!-- Custom Enterprise CSS -->
+    <link rel="stylesheet" href="/static/css/style.css?v=20260925_v5">
+    <style>
+        /* Force clean modern white navbar styles matching the reference design */
+        .app-top-navbar {
+            background-color: #ffffff !important;
+            border-bottom: 1px solid #e2e8f0 !important;
+            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04) !important;
+            padding: 0.5rem 1rem !important;
+            z-index: 1030 !important;
+        }
+        .app-top-navbar .navbar-brand span {
+            color: #0f172a !important;
+        }
+        .app-top-navbar .nav-link {
+            color: #475569 !important;
+            font-weight: 500 !important;
+            font-size: 0.86rem !important;
+            padding: 0.38rem 0.65rem !important;
+            border-radius: 8px !important;
+            transition: all 0.15s ease !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            gap: 0.3rem !important;
+            white-space: nowrap !important;
+        }
+        .app-top-navbar .nav-link i {
+            font-size: 0.95rem !important;
+            color: #64748b !important;
+        }
+        .app-top-navbar .nav-link:hover,
+        .app-top-navbar .nav-link.show {
+            color: #0f172a !important;
+            background-color: #f1f5f9 !important;
+        }
+        .app-top-navbar .nav-link:hover i,
+        .app-top-navbar .nav-link.show i {
+            color: #2563eb !important;
+        }
+        .app-top-navbar .nav-link.active,
+        .app-top-navbar .nav-link#nav-dashboard-link.active {
+            color: #2563eb !important;
+            background-color: #e0f2fe !important;
+            border-radius: 20px !important;
+            font-weight: 600 !important;
+            box-shadow: none !important;
+            position: relative;
+        }
+        .app-top-navbar .nav-link.active i {
+            color: #2563eb !important;
+        }
+        .user-profile-btn {
+            background-color: #f8fafc !important;
+            border: 1px solid #e2e8f0 !important;
+            border-radius: 30px !important;
+            padding: 0.22rem 0.65rem 0.22rem 0.35rem !important;
+            transition: all 0.15s ease !important;
+            max-width: 210px;
+        }
+        .user-profile-btn:hover,
+        .user-profile-btn:focus,
+        .user-profile-btn.show {
+            background-color: #f1f5f9 !important;
+            border-color: #cbd5e1 !important;
+        }
+        .user-display-name {
+            display: block;
+            max-width: 105px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .user-display-role-sub {
+            display: block;
+            max-width: 120px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .app-top-navbar .dropdown-menu {
+            background-color: #ffffff !important;
+            border: 1px solid #e2e8f0 !important;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08) !important;
+            border-radius: 12px !important;
+            padding: 0.5rem !important;
+            min-width: 220px !important;
+        }
+        .app-top-navbar .dropdown-item {
+            color: #334155 !important;
+            padding: 0.5rem 0.85rem !important;
+            border-radius: 6px !important;
+            font-size: 0.88rem !important;
+            display: flex !important;
+            align-items: center !important;
+            gap: 0.6rem !important;
+            font-weight: 500 !important;
+            transition: all 0.15s ease !important;
+        }
+        .app-top-navbar .dropdown-item:hover {
+            color: #0f172a !important;
+            background-color: #f1f5f9 !important;
+        }
+        .app-top-navbar .dropdown-item.active {
+            background-color: #e0f2fe !important;
+            color: #2563eb !important;
+            font-weight: 600 !important;
+        }
+        .app-top-navbar .dropdown-header {
+            color: #94a3b8 !important;
+            font-size: 0.7rem !important;
+            text-transform: uppercase !important;
+            font-weight: 700 !important;
+            letter-spacing: 0.06em !important;
+            padding: 0.4rem 0.85rem 0.2rem !important;
+        }
+        .nav-icon-btn {
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            background-color: #ffffff !important;
+            border: 1px solid #e2e8f0 !important;
+            color: #475569 !important;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            text-decoration: none;
+            transition: all 0.15s ease;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+            padding: 0 !important;
+        }
+        .nav-icon-btn:hover,
+        .nav-icon-btn:focus,
+        .nav-icon-btn.show {
+            background-color: #f8fafc !important;
+            color: #1e293b !important;
+            border-color: #cbd5e1 !important;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+        }
+        .badge-counter {
+            position: absolute;
+            top: -4px;
+            right: -5px;
+            background-color: #ef4444;
+            color: #ffffff;
+            font-size: 0.65rem;
+            font-weight: 700;
+            min-width: 18px;
+            height: 18px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 2px solid #ffffff;
+            box-shadow: 0 2px 5px rgba(239, 68, 68, 0.35);
+            padding: 0 3px;
+            line-height: 1;
+        }
+        #page-content-wrapper {
+            padding-left: 0 !important;
+            width: 100% !important;
+            min-width: 100% !important;
+        }
+
+        /* Sticky Footer Layout — ensures footer stays anchored at bottom of screen */
+        html {
+            height: 100%;
+        }
+        body {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        main {
+            flex: 1 0 auto;
+        }
+        footer {
+            margin-top: auto;
+            flex-shrink: 0;
+        }
+    </style>
+    {% block extra_css %}{% endblock %}
+</head>
+<body class="d-flex flex-column min-vh-100">
+
+    <!-- Toast Notification Container -->
+    <div id="toast-container" class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 1200;"></div>
+
+    <!-- Top Navigation Bar (Clean Modern White Theme) -->
+    <nav class="navbar navbar-expand-xl navbar-light bg-white app-top-navbar sticky-top border-bottom" style="border-color: #e2e8f0 !important; box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);">
+        <div class="container-fluid px-3 px-xl-4">
+            <!-- Brand & Tagline: EduManager (Learn • Grow • Achieve) -->
+            <a class="navbar-brand me-3 d-flex align-items-center gap-2" href="/dashboard/student/" id="navBrandLink">
+                <div class="rounded-3 d-flex align-items-center justify-content-center flex-shrink-0" style="width: 38px; height: 38px; background: #1e3a8a; color: #f59e0b; box-shadow: 0 2px 6px rgba(30, 58, 138, 0.25);">
+                    <i class="bi bi-mortarboard-fill fs-5"></i>
+                </div>
+                <div class="lh-1">
+                    <span class="d-block fw-bold text-dark fs-6" style="letter-spacing: -0.01em;">EduManager</span>
+                    <small class="text-secondary" style="font-size: 0.68rem; letter-spacing: 0.02em;">Learn &bull; Grow &bull; Achieve</small>
+                </div>
+            </a>
+
+            <!-- Mobile Hamburger Toggle -->
+            <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#topNavbarMenu" aria-controls="topNavbarMenu" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+
+            <!-- Navbar Nav Links -->
+            <div class="collapse navbar-collapse" id="topNavbarMenu">
+                <ul class="navbar-nav me-auto mb-2 mb-xl-0 gap-1 align-items-center">
+                    <!-- 1. Dashboard -->
+                    <li class="nav-item">
+                        <a id="nav-dashboard-link" class="nav-link {% if 'dashboard' in request.path %}active{% endif %}" href="/dashboard/student/">
+                            Dashboard
+                        </a>
+                    </li>
+
+                    <!-- 2. Attendance -->
+                    <li class="nav-item">
+                        <a class="nav-link {% if 'attendance' in request.path %}active{% endif %}" href="/attendance/">
+                            Attendance
+                        </a>
+                    </li>
+
+                    <!-- 4. Assignments -->
+                    <li class="nav-item">
+                        <a class="nav-link {% if 'assignments' in request.path %}active{% endif %}" href="/assignments/">
+                            Assignments
+                        </a>
+                    </li>
+
+                    <!-- 5. Fees (Admin and Student only) -->
+                    <li class="nav-item dropdown" data-role="admin,student">
+                        <a class="nav-link dropdown-toggle {% if 'fees' in request.path %}active{% endif %}" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            Fees
+                        </a>
+                        <ul class="dropdown-menu shadow-sm">
+                            <li><a class="dropdown-item" href="/fees/invoices/"><i class="bi bi-receipt-cutoff text-primary"></i> Fee Invoices</a></li>
+                            <li><a class="dropdown-item" href="/fees/structure/"><i class="bi bi-card-checklist text-info"></i> Fee Structure</a></li>
+                            <li><a class="dropdown-item" href="/fees/history/"><i class="bi bi-clock-history text-success"></i> Payment History</a></li>
+                        </ul>
+                    </li>
+
+                    <!-- 6. Examinations -->
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle {% if 'exams' in request.path or 'results' in request.path or 'marks' in request.path %}active{% endif %}" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            Examinations
+                        </a>
+                        <ul class="dropdown-menu shadow-sm">
+                            <li><a class="dropdown-item" href="/exams/"><i class="bi bi-calendar-range text-primary"></i> Exams Schedule</a></li>
+                            <li data-role="student,admin"><a class="dropdown-item" href="/exams/admit-card/"><i class="bi bi-qr-code-scan text-info"></i> Admit Card</a></li>
+                            <li><a class="dropdown-item" href="/exams/results/"><i class="bi bi-trophy-fill text-warning"></i> Results</a></li>
+                            <li data-role="teacher,admin"><a class="dropdown-item" href="/marks/"><i class="bi bi-award-fill text-success"></i> Enter Marks</a></li>
+                        </ul>
+                    </li>
+
+                    <!-- 7. Calendar -->
+                    <li class="nav-item">
+                        <a class="nav-link {% if 'calendar' in request.path %}active{% endif %}" href="/calendar/">
+                            Calendar
+                        </a>
+                    </li>
+
+                    <!-- 8. Noticeboard -->
+                    <li class="nav-item">
+                        <a class="nav-link {% if 'noticeboard' in request.path %}active{% endif %}" href="/noticeboard/">
+                            Noticeboard
+                        </a>
+                    </li>
+
+                    <!-- 9. Library -->
+                    <li class="nav-item" data-role="student,teacher">
+                        <a class="nav-link {% if 'library' in request.path %}active{% endif %}" href="/library/">
+                            Library
+                        </a>
+                    </li>
+
+                    <!-- Faculty Tools (for teacher role) -->
+                    <li class="nav-item dropdown" data-role="teacher">
+                        <a class="nav-link dropdown-toggle text-secondary {% if 'students' in request.path or 'marks' in request.path or 'departments' in request.path %}active{% endif %}" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="bi bi-person-workspace text-primary"></i> Faculty Tools
+                        </a>
+                        <ul class="dropdown-menu shadow-sm">
+                            <li><a class="dropdown-item" href="/students/"><i class="bi bi-people-fill text-primary"></i> Students Roster</a></li>
+                            <li><a class="dropdown-item" href="/marks/"><i class="bi bi-award text-success"></i> Enter Marks</a></li>
+                            <li><a class="dropdown-item" href="/timetable/"><i class="bi bi-calendar3 text-info"></i> Class Timetable</a></li>
+                            <li><a class="dropdown-item" href="/departments/"><i class="bi bi-building text-secondary"></i> Departments</a></li>
+                        </ul>
+                    </li>
+
+                    <!-- Admin Access (for admin role only) -->
+                    <li class="nav-item dropdown" data-role="admin">
+                        <a class="nav-link dropdown-toggle text-secondary" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="bi bi-shield-lock text-danger"></i> Admin
+                        </a>
+                        <ul class="dropdown-menu shadow-sm">
+                            <li><a class="dropdown-item" href="/students/"><i class="bi bi-people-fill text-primary"></i> Students Roster</a></li>
+                            <li><a class="dropdown-item" href="/students/add/"><i class="bi bi-person-plus-fill text-success"></i> Enroll Student</a></li>
+                            <li><a class="dropdown-item" href="/departments/"><i class="bi bi-building text-info"></i> Departments</a></li>
+                            <li><a class="dropdown-item" href="/courses/"><i class="bi bi-journal-bookmark text-success"></i> Courses</a></li>
+                            <li><a class="dropdown-item" href="/marks/"><i class="bi bi-award text-warning"></i> Academic Marks</a></li>
+                            <li><a class="dropdown-item" href="/fees/invoices/"><i class="bi bi-cash-coin text-primary"></i> Fee Invoices</a></li>
+                            <li><a class="dropdown-item" href="/users/"><i class="bi bi-person-badge text-danger"></i> Users Management</a></li>
+                            <li><a class="dropdown-item" href="/api/docs/" target="_blank"><i class="bi bi-code-slash text-dark"></i> REST API</a></li>
+                        </ul>
+                    </li>
+                </ul>
+
+                <!-- Right Side Items: Notifications, Messages, Profile -->
+                <div class="d-flex align-items-center gap-2 mt-2 mt-xl-0 flex-shrink-0">
+                    <!-- Notification Bell Dropdown -->
+                    <div class="dropdown">
+                        <button class="nav-icon-btn" type="button" data-bs-toggle="dropdown" aria-expanded="false" title="Notifications">
+                            <i class="bi bi-bell"></i>
+                            <span class="badge-counter d-none" id="navNotificationBadge">0</span>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end shadow-sm border mt-2 p-2" style="width: 320px;" id="navNotificationMenu">
+                            <li class="px-2 py-1 fw-bold text-dark border-bottom small d-flex justify-content-between align-items-center">
+                                <span><i class="bi bi-bell-fill me-1 text-warning"></i> Campus Notices</span>
+                                <a href="/noticeboard/" class="small text-primary text-decoration-none">View All</a>
+                            </li>
+                            <div id="navNotificationItems">
+                                <li class="p-3 text-center text-secondary small">
+                                    <span class="spinner-border spinner-border-sm me-1"></span> Loading notices...
+                                </li>
+                            </div>
+                        </ul>
+                    </div>
+
+                    <!-- Messages Envelope -->
+                    <div>
+                        <a href="/tickets/" class="nav-icon-btn" title="Support & Inquiries">
+                            <i class="bi bi-envelope"></i>
+                        </a>
+                    </div>
+
+                    <!-- Messenger Chat -->
+                    <div>
+                        <a href="/chat/" class="nav-icon-btn" title="Campus Messenger">
+                            <i class="bi bi-chat-dots"></i>
+                        </a>
+                    </div>
+
+                    <!-- User Account / Profile Dropdown -->
+                    <div class="dropdown">
+                        <button class="btn btn-light btn-sm rounded-pill d-flex align-items-center gap-2 px-2 py-1 user-profile-btn dropdown-toggle border border-secondary border-opacity-15" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <img src="https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&q=80&w=100" alt="User" class="rounded-circle user-avatar-img flex-shrink-0" style="width: 28px; height: 28px; object-fit: cover;">
+                            <div class="text-start d-none d-md-block lh-1 pe-1 overflow-hidden">
+                                <span class="d-block fw-bold text-dark user-display-name" style="font-size: 0.82rem;">User Account</span>
+                                <small class="text-secondary user-display-role-sub" style="font-size: 0.70rem;">Portal</small>
+                            </div>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end shadow-sm border mt-2" style="min-width: 230px;">
+                            <li class="px-3 py-2 border-bottom">
+                                <div class="fw-semibold text-dark small user-display-name">User Account</div>
+                                <span id="navRoleBadge" class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 mt-1">Portal</span>
+                            </li>
+                            <li>
+                                <a class="dropdown-item py-2 fw-semibold {% if 'profile' in request.path %}active{% endif %}" href="/profile/">
+                                    <i class="bi bi-person-circle me-2 text-primary"></i> My Profile
+                                </a>
+                            </li>
+                            <li data-role="teacher">
+                                <a class="dropdown-item py-2" href="/dashboard/teacher/">
+                                    <i class="bi bi-speedometer2 me-2 text-primary"></i> Teacher Dashboard
+                                </a>
+                            </li>
+                            <li data-role="admin">
+                                <a class="dropdown-item py-2" href="/dashboard/admin/">
+                                    <i class="bi bi-speedometer2 me-2 text-danger"></i> Admin Dashboard
+                                </a>
+                            </li>
+                            <li data-role="student">
+                                <a class="dropdown-item py-2" href="/dashboard/student/">
+                                    <i class="bi bi-speedometer2 me-2 text-success"></i> Student Dashboard
+                                </a>
+                            </li>
+                            <li><a class="dropdown-item py-2" href="/profile/#settings"><i class="bi bi-gear-fill me-2 text-secondary"></i>Account Settings</a></li>
+                            <li><a class="dropdown-item py-2" href="#" data-bs-toggle="modal" data-bs-target="#helpdeskModal"><i class="bi bi-question-circle me-2 text-info"></i>Helpdesk &amp; FAQ</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item text-danger py-2 btn-logout" href="#"><i class="bi bi-box-arrow-right me-2"></i>Sign Out</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content Container (Full Width) -->
+    <main class="container-xl py-4 px-3 px-md-4 flex-grow-1">
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Institutional Portal Footer -->
+    <footer class="mt-auto border-top py-4 bg-white flex-shrink-0" style="border-color: #e2e8f0 !important;">
+        <div class="container-xl px-3 px-md-4">
+            <div class="row align-items-center gy-3">
+                <div class="col-md-6 text-center text-md-start">
+                    <div class="d-flex align-items-center justify-content-center justify-content-md-start gap-2 mb-1">
+                        <div class="bg-primary text-white rounded p-1 d-flex align-items-center justify-content-center" style="width: 24px; height: 24px; font-size: 0.75rem;">
+                            <i class="bi bi-mortarboard-fill"></i>
+                        </div>
+                        <span class="fw-bold text-dark" style="font-size: 0.95rem;">EduManager <span class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25" style="font-size: 0.65rem;">ERP India</span></span>
+                    </div>
+                    <p class="text-secondary small mb-0">
+                        &copy; 2026-2027 Academic Session &bull; Indian Institute of Higher Education &amp; Technology. All rights reserved.
+                    </p>
+                </div>
+                <div class="col-md-6 text-center text-md-end">
+                    <div class="d-flex flex-wrap justify-content-center justify-content-md-end gap-3 small text-secondary">
+                        <a href="/noticeboard/" class="text-decoration-none text-secondary hover-primary">Circulars</a>
+                        <span class="text-muted">&bull;</span>
+                        <a href="/calendar/" class="text-decoration-none text-secondary hover-primary">Academic Calendar</a>
+                        <span class="text-muted">&bull;</span>
+                        <a href="#" data-bs-toggle="modal" data-bs-target="#helpdeskModal" class="text-decoration-none text-primary fw-semibold"><i class="bi bi-headset me-1"></i>Helpdesk &amp; Support</a>
+                        <span class="text-muted">&bull;</span>
+                        <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25"><i class="bi bi-shield-check me-1"></i>Server Online</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Campus Helpdesk Modal -->
+    <div class="modal fade" id="helpdeskModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow">
+                <div class="modal-header border-0 pb-0">
+                    <h5 class="modal-title fw-bold text-dark"><i class="bi bi-headset me-2 text-primary"></i>Institutional Helpdesk</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body py-3">
+                    <p class="text-muted small mb-3">For portal technical support, fee enquiries, or grade appeals, contact your respective department cell:</p>
+                    <div class="list-group list-group-flush small">
+                        <div class="list-group-item d-flex justify-content-between px-0 py-2">
+                            <span><i class="bi bi-envelope text-primary me-2"></i>Registrar Office:</span>
+                            <strong class="text-dark">registrar@school.edu</strong>
+                        </div>
+                        <div class="list-group-item d-flex justify-content-between px-0 py-2">
+                            <span><i class="bi bi-telephone text-success me-2"></i>Examination Cell:</span>
+                            <strong class="text-dark">+91 (022) 2876-5400</strong>
+                        </div>
+                        <div class="list-group-item d-flex justify-content-between px-0 py-2">
+                            <span><i class="bi bi-laptop text-info me-2"></i>IT Systems & ERP:</span>
+                            <strong class="text-dark">it-support@school.edu</strong>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 pt-0">
+                    <button type="button" class="btn btn-primary btn-sm px-4" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap 5 JS Bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Centralized API Client -->
+    <script src="/static/js/api.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const navSearch = document.getElementById('globalNavSearch');
+            if (navSearch) {
+                navSearch.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter') {
+                        const val = navSearch.value.trim();
+                        if (val) {
+                            window.location.href = `/students/?search=${encodeURIComponent(val)}`;
+                        }
+                    }
+                });
+            }
+        });
+    </script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

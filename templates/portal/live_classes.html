@@ -1,0 +1,61 @@
+{% extends 'base.html' %}
+
+{% block title %}Live Classes & Virtual Lectures — EduManager{% endblock %}
+
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
+    <div>
+        <h3 class="fw-bold text-dark mb-1">Live Virtual Classes</h3>
+        <p class="text-muted small mb-0">Join interactive video lectures, virtual office hours, and seminars</p>
+    </div>
+</div>
+
+<div class="row g-3" id="liveClassesContainer">
+    <div class="col-12 text-center py-4 text-muted">Loading live lectures...</div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', async () => {
+    const container = document.getElementById('liveClassesContainer');
+    try {
+        const res = await api.get('/services/live-classes/');
+        const classes = res.results || res.data || [];
+        if (!classes.length) {
+            container.innerHTML = `<div class="col-12 text-center py-4 text-muted">No live classes scheduled currently.</div>`;
+            return;
+        }
+
+        container.innerHTML = classes.map(c => {
+            const isLive = c.status === 'live';
+            return `
+                <div class="col-md-6">
+                    <div class="card p-4 border-0 shadow-sm h-100 ${isLive ? 'border border-danger border-2' : ''}">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span class="badge ${isLive ? 'bg-danger animate__animated animate__pulse animate__infinite' : 'bg-primary'} text-white">
+                                ${isLive ? '● LIVE NOW' : 'UPCOMING'}
+                            </span>
+                            <span class="text-muted small">${new Date(c.scheduled_at).toLocaleString()}</span>
+                        </div>
+                        <h5 class="fw-bold text-dark mb-1">${c.title}</h5>
+                        <div class="text-muted small mb-3">
+                            <span class="fw-semibold">${c.subject_name}</span> (${c.subject_code}) &bull; <i class="bi bi-person"></i> ${c.teacher_name || 'Instructor'}
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center pt-3 border-top mt-auto">
+                            <span class="small text-muted"><i class="bi bi-clock me-1"></i> ${c.duration_mins} mins session</span>
+                            <a href="${c.meeting_url}" target="_blank" class="btn ${isLive ? 'btn-danger' : 'btn-outline-primary'} btn-sm rounded-pill px-4">
+                                <i class="bi bi-camera-video me-1"></i> ${isLive ? 'Join Lecture' : 'Meeting Link'}
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    } catch(e) {
+        console.error(e);
+        container.innerHTML = `<div class="col-12 text-center text-danger py-4">Failed to load live classes.</div>`;
+    }
+});
+</script>
+{% endblock %}

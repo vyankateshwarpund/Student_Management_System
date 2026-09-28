@@ -1,0 +1,209 @@
+{% extends 'base.html' %}
+
+{% block title %}Student Details #{{ student_id }} — EduManager{% endblock %}
+
+{% block content %}
+<div class="mb-4">
+    <a href="/students/" class="btn btn-sm btn-link text-decoration-none p-0 mb-2">&larr; Back to Student Directory</a>
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
+        <div>
+            <h3 class="fw-bold text-dark mb-1" id="detailFullName">Loading Student...</h3>
+            <div class="text-muted small">
+                <span id="detailStudentId" class="badge bg-primary text-white me-2">ID: -</span>
+                <span id="detailStatus" class="badge bg-secondary">-</span>
+            </div>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="/students/{{ student_id }}/id-card/" target="_blank" class="btn btn-outline-dark btn-sm">
+                <i class="bi bi-person-badge me-1"></i> Student ID Card
+            </a>
+            <a href="/students/{{ student_id }}/transcript/" target="_blank" class="btn btn-outline-success btn-sm">
+                <i class="bi bi-award me-1"></i> Official Marksheet
+            </a>
+            <div data-role="admin">
+                <a href="/students/{{ student_id }}/edit/" class="btn btn-primary btn-sm"><i class="bi bi-pencil me-1"></i> Edit Profile</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Left Column: Personal & Contact Info -->
+    <div class="col-lg-4">
+        <div class="card p-3 mb-4">
+            <div class="text-center py-3 border-bottom mb-3">
+                <div class="d-inline-flex align-items-center justify-content-center bg-light text-primary rounded-circle border shadow-sm mb-2" style="width: 80px; height: 80px; font-size: 2.2rem;">
+                    <i class="bi bi-person-fill"></i>
+                </div>
+                <h5 class="fw-bold mb-0" id="cardName">-</h5>
+                <span class="text-muted small" id="cardEmail">-</span>
+            </div>
+
+            <div class="list-group list-group-flush small">
+                <div class="list-group-item d-flex justify-content-between px-0 py-2">
+                    <span class="text-muted">Phone</span>
+                    <span class="fw-medium" id="cardPhone">-</span>
+                </div>
+                <div class="list-group-item d-flex justify-content-between px-0 py-2">
+                    <span class="text-muted">Gender</span>
+                    <span class="fw-medium text-capitalize" id="cardGender">-</span>
+                </div>
+                <div class="list-group-item d-flex justify-content-between px-0 py-2">
+                    <span class="text-muted">Date of Birth</span>
+                    <span class="fw-medium" id="cardDob">-</span>
+                </div>
+                <div class="list-group-item d-flex justify-content-between px-0 py-2">
+                    <span class="text-muted">Admission Date</span>
+                    <span class="fw-medium" id="cardAdmission">-</span>
+                </div>
+                <div class="list-group-item d-flex justify-content-between px-0 py-2">
+                    <span class="text-muted">City / State</span>
+                    <span class="fw-medium" id="cardCityState">-</span>
+                </div>
+                <div class="list-group-item d-flex justify-content-between px-0 py-2">
+                    <span class="text-muted">Pincode</span>
+                    <span class="fw-medium" id="cardPincode">-</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Attendance Overview Card -->
+        <div class="card p-3">
+            <h6 class="fw-bold text-dark mb-3">Attendance Record</h6>
+            <div class="text-center py-2">
+                <h2 class="fw-bold text-success mb-0" id="detailAttPct">-%</h2>
+                <div class="text-muted small mb-3">Overall Presence Rate</div>
+                <div class="progress mb-2" style="height: 6px;">
+                    <div class="progress-bar bg-success" id="detailAttBar" style="width: 0%"></div>
+                </div>
+                <span class="small text-muted" id="detailAttClasses">- classes recorded</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Right Column: Academic Details & Marks -->
+    <div class="col-lg-8">
+        <!-- Academic Summary Card -->
+        <div class="card p-3 mb-4">
+            <h6 class="fw-bold text-dark border-bottom pb-2 mb-3">Academic Program</h6>
+            <div class="row g-3">
+                <div class="col-sm-6">
+                    <div class="text-muted small">Department</div>
+                    <div class="fw-bold text-dark" id="detailDept">-</div>
+                </div>
+                <div class="col-sm-6">
+                    <div class="text-muted small">Enrolled Course</div>
+                    <div class="fw-bold text-dark" id="detailCourse">-</div>
+                </div>
+                <div class="col-sm-6">
+                    <div class="text-muted small">Current Semester</div>
+                    <div class="fw-bold text-dark" id="detailSem">-</div>
+                </div>
+                <div class="col-sm-6">
+                    <div class="text-muted small">Academic Year</div>
+                    <div class="fw-bold text-dark" id="detailYear">-</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Examination Marks Card -->
+        <div class="card p-3">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h6 class="fw-bold text-dark mb-0">Examination Scores & Marks</h6>
+                <div data-role="admin,teacher">
+                    <a href="/marks/" class="btn btn-sm btn-outline-primary"><i class="bi bi-plus me-1"></i> Add Marks</a>
+                </div>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead>
+                        <tr>
+                            <th>Subject</th>
+                            <th>Internal</th>
+                            <th>External</th>
+                            <th>Practical</th>
+                            <th>Total</th>
+                            <th>Grade</th>
+                        </tr>
+                    </thead>
+                    <tbody id="detailMarksTable">
+                        <tr><td colspan="6" class="text-center py-3 text-muted">Loading marks...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const studentId = "{{ student_id }}";
+
+document.addEventListener('DOMContentLoaded', async () => {
+    if (!auth.requireAuth()) return;
+
+    try {
+        // Fetch student details
+        const res = await api.get(`/students/${studentId}/`);
+        const s = res.data;
+
+        document.getElementById('detailFullName').textContent = s.full_name;
+        document.getElementById('cardName').textContent = s.full_name;
+        document.getElementById('cardEmail').textContent = s.email;
+        document.getElementById('detailStudentId').textContent = `ID: ${s.student_id}`;
+        document.getElementById('detailStatus').textContent = s.status.toUpperCase();
+        document.getElementById('detailStatus').className = `badge badge-status-${s.status}`;
+
+        document.getElementById('cardPhone').textContent = s.phone || 'N/A';
+        document.getElementById('cardGender').textContent = s.gender || 'N/A';
+        document.getElementById('cardDob').textContent = s.date_of_birth || 'N/A';
+        document.getElementById('cardAdmission').textContent = s.admission_date || 'N/A';
+        document.getElementById('cardCityState').textContent = `${s.city || '-'}, ${s.state || '-'}`;
+        document.getElementById('cardPincode').textContent = s.pincode || 'N/A';
+
+        document.getElementById('detailDept').textContent = `${s.department_name} (${s.department_code || ''})`;
+        document.getElementById('detailCourse').textContent = `${s.course_name} (${s.course_code || ''})`;
+        document.getElementById('detailSem').textContent = `Semester ${s.semester}`;
+        document.getElementById('detailYear').textContent = s.year || 'N/A';
+
+        // Load Attendance summary for this student
+        try {
+            const attRes = await api.get(`/attendance/summary/?student_id=${s.student_id}`);
+            const att = attRes.data;
+            document.getElementById('detailAttPct').textContent = `${att.overall_percentage}%`;
+            document.getElementById('detailAttBar').style.width = `${att.overall_percentage}%`;
+            document.getElementById('detailAttClasses').textContent = `${att.present} of ${att.total_classes} classes attended`;
+        } catch (e) {
+            document.getElementById('detailAttClasses').textContent = 'No attendance recorded yet';
+        }
+
+        // Load Marks for this student
+        try {
+            const marksRes = await api.get(`/marks/student/${s.student_id}/`);
+            const marksList = marksRes.data.marks || [];
+            const tbody = document.getElementById('detailMarksTable');
+            if (!marksList.length) {
+                tbody.innerHTML = '<tr><td colspan="6" class="text-center py-3 text-muted">No marks recorded yet.</td></tr>';
+            } else {
+                tbody.innerHTML = marksList.map(m => `
+                    <tr>
+                        <td class="fw-semibold">${m.subject_name || '-'}</td>
+                        <td>${m.internal_marks}</td>
+                        <td>${m.external_marks}</td>
+                        <td>${m.practical_marks}</td>
+                        <td class="fw-bold">${m.total_marks}</td>
+                        <td><span class="badge bg-success">${m.grade}</span></td>
+                    </tr>
+                `).join('');
+            }
+        } catch (e) {
+            document.getElementById('detailMarksTable').innerHTML = '<tr><td colspan="6" class="text-center py-3 text-muted">No examination scores available.</td></tr>';
+        }
+
+    } catch (err) {
+        showToast(err.message || 'Failed to load student details', 'danger');
+    }
+});
+</script>
+{% endblock %}

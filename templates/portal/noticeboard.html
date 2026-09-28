@@ -1,0 +1,58 @@
+{% extends 'base.html' %}
+
+{% block title %}Noticeboard & Circulars — EduManager{% endblock %}
+
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
+    <div>
+        <h3 class="fw-bold text-dark mb-1">Campus Noticeboard</h3>
+        <p class="text-muted small mb-0">Official university circulars, exam notifications, and advisories</p>
+    </div>
+</div>
+
+<div class="d-flex flex-column gap-3" id="noticeboardContainer">
+    <div class="card p-4 text-center text-muted">Loading circulars...</div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', async () => {
+    const container = document.getElementById('noticeboardContainer');
+    try {
+        const res = await api.get('/announcements/');
+        const notices = res.results || res.data || [];
+        if (!notices.length) {
+            container.innerHTML = `<div class="card p-4 text-center text-muted">No notices posted.</div>`;
+            return;
+        }
+
+        const catColors = {
+            'URGENT': 'danger',
+            'EXAM': 'warning text-dark',
+            'ACADEMIC': 'primary',
+            'HOLIDAY': 'info',
+            'EVENT': 'success',
+            'GENERAL': 'secondary'
+        };
+
+        container.innerHTML = notices.map(n => `
+            <div class="card p-4 border-0 shadow-sm ${n.is_pinned ? 'border-start border-4 border-danger' : ''}">
+                <div class="d-flex justify-content-between align-items-start mb-2">
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="badge bg-${catColors[n.category] || 'secondary'}">${n.category}</span>
+                        ${n.is_pinned ? '<span class="badge bg-danger"><i class="bi bi-pin-angle-fill me-1"></i> Pinned</span>' : ''}
+                    </div>
+                    <span class="text-muted small font-monospace">${new Date(n.created_at).toLocaleDateString()}</span>
+                </div>
+                <h5 class="fw-bold text-dark mb-2">${n.title}</h5>
+                <p class="text-secondary small mb-0" style="white-space: pre-line; line-height: 1.6;">${n.content}</p>
+            </div>
+        `).join('');
+    } catch(err) {
+        console.error(err);
+        container.innerHTML = `<div class="card p-4 text-center text-danger">Failed to load notices.</div>`;
+    }
+});
+</script>
+{% endblock %}

@@ -1,0 +1,137 @@
+{% extends 'base.html' %}
+
+{% block title %}Leave Applications — EduManager{% endblock %}
+
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
+    <div>
+        <h3 class="fw-bold text-dark mb-1">Leave Applications</h3>
+        <p class="text-muted small mb-0">Apply for sick leave, casual leave, or academic absence</p>
+    </div>
+    <div class="d-flex gap-2">
+        <button class="btn btn-primary btn-sm rounded-pill px-3" data-bs-toggle="modal" data-bs-target="#leaveModal">
+            <i class="bi bi-plus-circle me-1"></i> Apply for Leave
+        </button>
+    </div>
+</div>
+
+<div class="card p-0 border-0 shadow-sm overflow-hidden mb-4">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>Leave Type</th>
+                    <th>From Date</th>
+                    <th>To Date</th>
+                    <th>Reason</th>
+                    <th>Status</th>
+                    <th>Admin Remarks</th>
+                </tr>
+            </thead>
+            <tbody id="leavesTableBody">
+                <tr><td colspan="6" class="text-center py-4 text-muted">Loading leave applications...</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Modal: Apply Leave -->
+<div class="modal fade" id="leaveModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header border-0 pb-0">
+                <h5 class="modal-title fw-bold">Apply for Student Leave</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="leaveForm">
+                <div class="modal-body py-3">
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold text-secondary">Leave Category *</label>
+                        <select id="leaveTypeSelect" class="form-select" required>
+                            <option value="medical">Medical / Sick Leave</option>
+                            <option value="casual">Casual Leave</option>
+                            <option value="academic">Academic Duty / Competition</option>
+                        </select>
+                    </div>
+                    <div class="row g-2 mb-3">
+                        <div class="col-6">
+                            <label class="form-label small fw-semibold text-secondary">From Date *</label>
+                            <input type="date" id="leaveFromDate" class="form-control" required>
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label small fw-semibold text-secondary">To Date *</label>
+                            <input type="date" id="leaveToDate" class="form-control" required>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold text-secondary">Reason & Explanation *</label>
+                        <textarea id="leaveReason" class="form-control" rows="3" placeholder="Provide reason for absence..." required></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 pt-0">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary px-4">Submit Application</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', loadLeaves);
+
+async function loadLeaves() {
+    const tbody = document.getElementById('leavesTableBody');
+    try {
+        const res = await api.get('/services/leaves/');
+        const leaves = res.results || res.data || [];
+        if (!leaves.length) {
+            tbody.innerHTML = `<tr><td colspan="6" class="text-center py-4 text-muted">No leave requests found.</td></tr>`;
+            return;
+        }
+
+        const badges = {
+            'approved': '<span class="badge bg-success">Approved</span>',
+            'pending': '<span class="badge bg-warning text-dark">Pending</span>',
+            'rejected': '<span class="badge bg-danger">Rejected</span>'
+        };
+
+        tbody.innerHTML = leaves.map(l => `
+            <tr>
+                <td><span class="badge bg-light text-dark border text-uppercase">${l.leave_type}</span></td>
+                <td>${l.from_date}</td>
+                <td>${l.to_date}</td>
+                <td><span class="text-secondary">${l.reason}</span></td>
+                <td>${badges[l.status] || l.status}</td>
+                <td class="text-muted small">${l.admin_remarks || 'Pending review by Dean office'}</td>
+            </tr>
+        `).join('');
+    } catch(err) {
+        console.error(err);
+        tbody.innerHTML = `<tr><td colspan="6" class="text-center text-danger py-4">Failed to load leaves.</td></tr>`;
+    }
+}
+
+document.getElementById('leaveForm')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const data = {
+        leave_type: document.getElementById('leaveTypeSelect').value,
+        from_date: document.getElementById('leaveFromDate').value,
+        to_date: document.getElementById('leaveToDate').value,
+        reason: document.getElementById('leaveReason').value
+    };
+
+    try {
+        await api.post('/services/leaves/', data);
+        showToast('Leave application submitted for approval!', 'success');
+        bootstrap.Modal.getInstance(document.getElementById('leaveModal')).hide();
+        document.getElementById('leaveForm').reset();
+        loadLeaves();
+    } catch(err) {
+        showToast(err.message || 'Submission failed', 'danger');
+    }
+});
+</script>
+{% endblock %}

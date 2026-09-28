@@ -1,0 +1,79 @@
+{% extends 'base.html' %}
+
+{% block title %}Class Time Table — EduManager{% endblock %}
+
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
+    <div>
+        <h3 class="fw-bold text-dark mb-1">Class Time Table</h3>
+        <p class="text-muted small mb-0">Weekly schedule of lecture periods, laboratory practicals, and rooms</p>
+    </div>
+    <div class="d-flex gap-2">
+        <button class="btn btn-outline-secondary btn-sm" onclick="window.print()">
+            <i class="bi bi-printer me-1"></i> Print Timetable
+        </button>
+    </div>
+</div>
+
+<div class="card p-0 border-0 shadow-sm overflow-hidden mb-4">
+    <div class="table-responsive">
+        <table class="table table-bordered align-middle text-center mb-0">
+            <thead class="table-dark">
+                <tr>
+                    <th style="width: 14%;">Day</th>
+                    <th>Period 1<br><small class="text-white-50">09:00 - 10:00</small></th>
+                    <th>Period 2<br><small class="text-white-50">10:00 - 11:00</small></th>
+                    <th>Period 3<br><small class="text-white-50">11:15 - 12:15</small></th>
+                    <th>Period 4<br><small class="text-white-50">13:00 - 14:00</small></th>
+                    <th>Period 5<br><small class="text-white-50">14:00 - 15:00</small></th>
+                </tr>
+            </thead>
+            <tbody id="timetableGridBody">
+                <tr><td colspan="6" class="text-center py-4 text-muted">Loading timetable...</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', async () => {
+    const tbody = document.getElementById('timetableGridBody');
+    try {
+        const res = await api.get('/services/schedules/');
+        const schedules = res.results || res.data || [];
+        const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
+        
+        tbody.innerHTML = days.map(day => {
+            const daySchedules = schedules.filter(s => s.day_of_week === day);
+            let periodCells = '';
+            for (let p = 1; p <= 5; p++) {
+                const item = daySchedules.find(s => s.period_number === p);
+                if (item) {
+                    periodCells += `
+                        <td class="p-3">
+                            <div class="fw-bold text-dark">${item.subject_name}</div>
+                            <span class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 font-monospace">${item.subject_code}</span>
+                            <div class="text-muted small mt-1"><i class="bi bi-geo-alt"></i> ${item.room}</div>
+                            <div class="text-secondary small"><i class="bi bi-person"></i> ${item.teacher_name || 'Faculty'}</div>
+                        </td>
+                    `;
+                } else {
+                    periodCells += `<td class="text-muted bg-light small">Study / Break</td>`;
+                }
+            }
+            return `
+                <tr>
+                    <td class="fw-bold bg-light text-uppercase">${day}</td>
+                    ${periodCells}
+                </tr>
+            `;
+        }).join('');
+    } catch(e) {
+        console.error(e);
+        tbody.innerHTML = `<tr><td colspan="6" class="text-center text-danger py-4">Failed to load timetable.</td></tr>`;
+    }
+});
+</script>
+{% endblock %}

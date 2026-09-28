@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Digital Student ID Card — EduManager</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Libre+Barcode+39+Text&display=swap" rel="stylesheet">
+    <!-- Bootstrap 5 -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <style>
+        body {
+            background-color: #f1f5f9;
+            font-family: 'Inter', sans-serif;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem 1rem;
+        }
+
+        /* ID Card standard dimensions */
+        .id-card-wrapper {
+            width: 380px;
+            height: 580px;
+            background: #ffffff;
+            border-radius: 18px;
+            overflow: hidden;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.12);
+            position: relative;
+            border: 1px solid #e2e8f0;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .id-header {
+            background: linear-gradient(135deg, #1e1e2d 0%, #312e81 100%);
+            color: #ffffff;
+            padding: 1.5rem 1rem 1.25rem;
+            text-align: center;
+            position: relative;
+        }
+
+        .id-header::after {
+            content: '';
+            position: absolute;
+            bottom: -12px;
+            left: 0;
+            right: 0;
+            height: 12px;
+            background: #4f46e5;
+        }
+
+        .university-title {
+            font-size: 0.95rem;
+            font-weight: 800;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            margin-bottom: 0.2rem;
+        }
+
+        .university-sub {
+            font-size: 0.68rem;
+            opacity: 0.8;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+        }
+
+        .photo-wrapper {
+            margin: 1.5rem auto 0.75rem;
+            width: 110px;
+            height: 110px;
+            border-radius: 50%;
+            background: #f8fafc;
+            border: 4px solid #ffffff;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        .photo-placeholder {
+            font-size: 3.5rem;
+            color: #4f46e5;
+        }
+
+        .student-name {
+            font-size: 1.3rem;
+            font-weight: 800;
+            color: #0f172a;
+            text-align: center;
+            margin-bottom: 0.2rem;
+        }
+
+        .student-roll {
+            text-align: center;
+            margin-bottom: 1.25rem;
+        }
+
+        .student-roll span {
+            background: #e0e7ff;
+            color: #4338ca;
+            padding: 0.25rem 0.85rem;
+            border-radius: 20px;
+            font-weight: 700;
+            font-size: 0.85rem;
+            letter-spacing: 0.04em;
+        }
+
+        .info-grid {
+            padding: 0 1.75rem;
+            font-size: 0.82rem;
+        }
+
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.35rem 0;
+            border-bottom: 1px dashed #e2e8f0;
+        }
+
+        .info-label {
+            color: #64748b;
+            font-weight: 500;
+        }
+
+        .info-val {
+            font-weight: 700;
+            color: #1e293b;
+            text-align: right;
+        }
+
+        .id-footer {
+            margin-top: auto;
+            background: #f8fafc;
+            padding: 1rem 1.75rem;
+            border-top: 1px solid #e2e8f0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .qr-code {
+            width: 58px;
+            height: 58px;
+            border-radius: 6px;
+            border: 1px solid #cbd5e1;
+        }
+
+        .signature-block {
+            text-align: right;
+            font-size: 0.72rem;
+            color: #475569;
+        }
+
+        .sig-line {
+            width: 100px;
+            border-top: 1px solid #334155;
+            margin-bottom: 0.25rem;
+        }
+
+        @media print {
+            body {
+                background: none;
+                padding: 0;
+            }
+            .no-print {
+                display: none !important;
+            }
+            .id-card-wrapper {
+                box-shadow: none;
+                border: 1px solid #000;
+                margin: auto;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="no-print mb-4 d-flex gap-2">
+        <a href="/students/{{ student_id }}/" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-arrow-left me-1"></i> Back to Profile
+        </a>
+        <button class="btn btn-primary btn-sm px-4" onclick="window.print()">
+            <i class="bi bi-printer me-1"></i> Print ID Badge
+        </button>
+    </div>
+
+    <!-- ID Card Front -->
+    <div class="id-card-wrapper" id="idCard">
+        <div class="id-header">
+            <div class="university-title">National Institute of Technology</div>
+            <div class="university-sub">Autonomous Institution &bull; Accredited Grade 'A'</div>
+        </div>
+
+        <div class="photo-wrapper">
+            <i class="bi bi-person-fill photo-placeholder"></i>
+        </div>
+
+        <div class="student-name" id="cardName">Loading...</div>
+        <div class="student-roll">
+            <span id="cardId">ID: -</span>
+        </div>
+
+        <div class="info-grid">
+            <div class="info-row">
+                <span class="info-label">Program:</span>
+                <span class="info-val" id="cardCourse">-</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Department:</span>
+                <span class="info-val" id="cardDept">-</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Current Semester:</span>
+                <span class="info-val" id="cardSem">-</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Validity:</span>
+                <span class="info-val">2024 — 2028</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Emergency Phone:</span>
+                <span class="info-val" id="cardPhone">-</span>
+            </div>
+        </div>
+
+        <div class="id-footer">
+            <img id="qrImg" class="qr-code" src="https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=VERIFIED_STUDENT" alt="QR Code">
+            <div class="signature-block">
+                <div class="sig-line"></div>
+                <strong>Dean of Academics</strong><br>
+                <span>Authorized Signatory</span>
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/js/api.js"></script>
+    <script>
+        const studentId = "{{ student_id }}";
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            if (!auth.requireAuth()) return;
+
+            try {
+                const res = await api.get(`/students/${studentId}/`);
+                const s = res.data;
+
+                document.getElementById('cardName').textContent = s.full_name;
+                document.getElementById('cardId').textContent = s.student_id;
+                document.getElementById('cardCourse').textContent = s.course_name || '-';
+                document.getElementById('cardDept').textContent = s.department_name || '-';
+                document.getElementById('cardSem').textContent = `Semester ${s.semester}`;
+                document.getElementById('cardPhone').textContent = s.phone || '9876543210';
+
+                // Update QR code with verify URL
+                const qrData = encodeURIComponent(`STUDENT:${s.student_id}|NAME:${s.full_name}|STATUS:${s.status.toUpperCase()}`);
+                document.getElementById('qrImg').src = `https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=${qrData}`;
+
+            } catch (err) {
+                alert('Failed to load student record');
+            }
+        });
+    </script>
+</body>
+</html>

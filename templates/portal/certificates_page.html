@@ -1,0 +1,119 @@
+{% extends 'base.html' %}
+
+{% block title %}Certificates & Documentation — EduManager{% endblock %}
+
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
+    <div>
+        <h3 class="fw-bold text-dark mb-1">Official Certificates</h3>
+        <p class="text-muted small mb-0">Generate and print authentic Bonafide, Study, and Merit certificates</p>
+    </div>
+</div>
+
+<div class="card p-0 border-0 shadow-sm overflow-hidden mb-4">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>Certificate No</th>
+                    <th>Type</th>
+                    <th>Date Issued</th>
+                    <th>Purpose</th>
+                    <th class="text-end">Print / Download</th>
+                </tr>
+            </thead>
+            <tbody id="certificatesTableBody">
+                <tr><td colspan="5" class="text-center py-4 text-muted">Loading certificates...</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Modal: Printable Certificate Preview -->
+<div class="modal fade" id="certModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header border-0 pb-0">
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-5 text-center" id="printableCertPaper" style="border: 4px double #0f172a; margin: 15px; background: #fff;">
+                <div class="text-uppercase tracking-wider fw-bold text-secondary small">National Metropolitan University</div>
+                <h3 class="fw-bold text-dark mt-2 mb-1" style="font-family: serif; letter-spacing: 0.05em;" id="certTitle">BONAFIDE STUDENT CERTIFICATE</h3>
+                <div class="small font-monospace text-muted mb-4" id="certNumber">REF: BON-2026-0881</div>
+
+                <p class="fs-6 text-dark text-start lh-lg mt-4 px-3" style="text-indent: 40px;" id="certBody">
+                    This is to certify that <strong>Aarav Sharma</strong> (Roll No: <strong>2026CSE001</strong>) is a bonafide student of this institution, currently enrolled in <strong>B.Tech Computer Science & Engineering</strong> during the academic session <strong>2026-2027</strong>.
+                    <br><br>
+                    To the best of our knowledge, his conduct and character during his tenure at this institution have been exemplary. This certificate is issued upon student request for <strong>Official National Education Scholarship & Passport Verification</strong>.
+                </p>
+
+                <div class="row pt-5 mt-4 text-center">
+                    <div class="col-6">
+                        <div class="border-bottom border-dark pb-2 font-monospace" id="certDate">Date: September 23, 2026</div>
+                        <div class="small text-muted mt-1">Date of Issue</div>
+                    </div>
+                    <div class="col-6">
+                        <div class="border-bottom border-dark pb-2 fw-bold text-dark">Registrar / Dean Academics</div>
+                        <div class="small text-muted mt-1">Authorized Signatory & University Seal</div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer border-0 pt-0">
+                <button type="button" class="btn btn-light" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary px-4" onclick="window.print()">
+                    <i class="bi bi-printer me-1"></i> Print Certificate
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let certsData = [];
+
+document.addEventListener('DOMContentLoaded', async () => {
+    const tbody = document.getElementById('certificatesTableBody');
+    try {
+        const res = await api.get('/services/certificates/');
+        certsData = res.results || res.data || [];
+        if (!certsData.length) {
+            tbody.innerHTML = `<tr><td colspan="5" class="text-center py-4 text-muted">No certificates issued yet.</td></tr>`;
+            return;
+        }
+
+        tbody.innerHTML = certsData.map((c, idx) => `
+            <tr>
+                <td class="font-monospace fw-bold text-primary">${c.certificate_no}</td>
+                <td><span class="badge bg-dark">${c.certificate_type.toUpperCase()}</span></td>
+                <td>${c.issue_date}</td>
+                <td class="text-secondary small">${c.purpose}</td>
+                <td class="text-end">
+                    <button class="btn btn-sm btn-outline-primary rounded-pill px-3" onclick="openCertModal(${idx})">
+                        <i class="bi bi-file-earmark-check me-1"></i> View Certificate
+                    </button>
+                </td>
+            </tr>
+        `).join('');
+    } catch(err) {
+        console.error(err);
+        tbody.innerHTML = `<tr><td colspan="5" class="text-center text-danger py-4">Failed to load certificates.</td></tr>`;
+    }
+});
+
+function openCertModal(idx) {
+    const c = certsData[idx];
+    if (!c) return;
+    document.getElementById('certNumber').textContent = 'REF: ' + c.certificate_no;
+    document.getElementById('certDate').textContent = 'Date: ' + c.issue_date;
+    document.getElementById('certTitle').textContent = (c.certificate_type.toUpperCase() + ' CERTIFICATE');
+    document.getElementById('certBody').innerHTML = `
+        This is to certify that <strong>${c.student_name || 'Aarav Sharma'}</strong> (Roll No: <strong>${c.student_id_code || '2026CSE001'}</strong>) is a bonafide student of this institution, currently enrolled in <strong>${c.course_name || 'B.Tech Computer Science & Engineering'}</strong>, Department of <strong>${c.department_name || 'Computer Science and Engineering'}</strong> during the academic session <strong>2026-2027</strong>.
+        <br><br>
+        To the best of our knowledge, their conduct and character during tenure at this institution have been exemplary. This certificate is issued upon student request for <strong>${c.purpose}</strong>.
+    `;
+    new bootstrap.Modal(document.getElementById('certModal')).show();
+}
+</script>
+{% endblock %}

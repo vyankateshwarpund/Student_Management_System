@@ -1,0 +1,171 @@
+{% extends 'base.html' %}
+
+{% block title %}Departments — EduManager{% endblock %}
+
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
+    <div>
+        <h3 class="fw-bold text-dark mb-1">Academic Departments</h3>
+        <p class="text-muted small mb-0">Manage institution faculties, codes, and department branches</p>
+    </div>
+    <div data-role="admin">
+        <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#deptModal" onclick="prepareAddDept()">
+            <i class="bi bi-plus-circle me-1"></i> Add Department
+        </button>
+    </div>
+</div>
+
+<div class="card p-0 border-0 shadow-sm overflow-hidden">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead>
+                <tr>
+                    <th>Department Name</th>
+                    <th>Code</th>
+                    <th>Total Courses</th>
+                    <th>Enrolled Students</th>
+                    <th>Description</th>
+                    <th class="text-end pe-4" data-role="admin">Actions</th>
+                </tr>
+            </thead>
+            <tbody id="deptTableBody">
+                <tr><td colspan="6" class="text-center py-4 text-muted">Loading departments...</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Add/Edit Department Modal -->
+<div class="modal fade" id="deptModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header border-0 pb-0">
+                <h5 class="modal-title fw-bold" id="deptModalTitle">Add Department</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="deptForm">
+                <div class="modal-body py-3">
+                    <input type="hidden" id="deptId">
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold text-secondary">Department Name *</label>
+                        <input type="text" id="deptName" class="form-control" placeholder="e.g. Computer Science and Engineering" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold text-secondary">Code *</label>
+                        <input type="text" id="deptCode" class="form-control" placeholder="e.g. CSE" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold text-secondary">Description</label>
+                        <textarea id="deptDesc" class="form-control" rows="2" placeholder="Brief department description..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 pt-0">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" id="saveDeptBtn" class="btn btn-primary">Save Department</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let departments = [];
+
+async function loadDepartments() {
+    const tbody = document.getElementById('deptTableBody');
+    try {
+        const res = await api.get('/departments/');
+        departments = res.data || res.results || [];
+        const isAdmin = auth.isAdmin();
+
+        if (!departments.length) {
+            tbody.innerHTML = '<tr><td colspan="6" class="text-center py-4 text-muted">No departments configured yet.</td></tr>';
+            return;
+        }
+
+        tbody.innerHTML = departments.map(d => `
+            <tr>
+                <td class="fw-semibold text-dark">${d.name}</td>
+                <td><span class="badge bg-primary bg-opacity-10 text-primary">${d.code}</span></td>
+                <td>${d.courses_count || 0}</td>
+                <td>${d.students_count || 0}</td>
+                <td class="text-muted small">${d.description || '-'}</td>
+                ${isAdmin ? `
+                    <td class="text-end pe-4">
+                        <div class="btn-group btn-group-sm">
+                            <button class="btn btn-outline-primary" onclick="prepareEditDept(${d.id})"><i class="bi bi-pencil"></i></button>
+                            <button class="btn btn-outline-danger" onclick="deleteDept(${d.id}, '${d.name}')"><i class="bi bi-trash"></i></button>
+                        </div>
+                    </td>
+                ` : '<td class="text-end pe-4">-</td>'}
+            </tr>
+        `).join('');
+
+    } catch (err) {
+        tbody.innerHTML = `<tr><td colspan="6" class="text-center py-4 text-danger">${err.message || 'Failed to load departments'}</td></tr>`;
+    }
+}
+
+function prepareAddDept() {
+    document.getElementById('deptId').value = '';
+    document.getElementById('deptName').value = '';
+    document.getElementById('deptCode').value = '';
+    document.getElementById('deptDesc').value = '';
+    document.getElementById('deptModalTitle').textContent = 'Add Department';
+}
+
+function prepareEditDept(id) {
+    const d = departments.find(item => item.id === id);
+    if (!d) return;
+
+    document.getElementById('deptId').value = d.id;
+    document.getElementById('deptName').value = d.name;
+    document.getElementById('deptCode').value = d.code;
+    document.getElementById('deptDesc').value = d.description || '';
+    document.getElementById('deptModalTitle').textContent = 'Edit Department';
+    new bootstrap.Modal(document.getElementById('deptModal')).show();
+}
+
+async function deleteDept(id, name) {
+    if (!confirm(`Are you sure you want to delete department: ${name}?`)) return;
+    try {
+        await api.delete(`/departments/${id}/`);
+        showToast('Department deleted successfully', 'success');
+        loadDepartments();
+    } catch (err) {
+        showToast(err.message || 'Failed to delete department', 'danger');
+    }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    if (!auth.requireAuth()) return;
+    loadDepartments();
+
+    document.getElementById('deptForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const id = document.getElementById('deptId').value;
+        const payload = {
+            name: document.getElementById('deptName').value.trim(),
+            code: document.getElementById('deptCode').value.trim().toUpperCase(),
+            description: document.getElementById('deptDesc').value.trim() || null
+        };
+
+        try {
+            if (id) {
+                await api.put(`/departments/${id}/`, payload);
+                showToast('Department updated successfully', 'success');
+            } else {
+                await api.post('/departments/', payload);
+                showToast('Department created successfully', 'success');
+            }
+            bootstrap.Modal.getInstance(document.getElementById('deptModal')).hide();
+            loadDepartments();
+        } catch (err) {
+            showToast(err.message || 'Failed to save department', 'danger');
+        }
+    });
+});
+</script>
+{% endblock %}

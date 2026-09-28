@@ -1,0 +1,136 @@
+{% extends 'base.html' %}
+
+{% block title %}Helpdesk & Support Tickets — EduManager{% endblock %}
+
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
+    <div>
+        <h3 class="fw-bold text-dark mb-1">Helpdesk & Support Tickets</h3>
+        <p class="text-muted small mb-0">Submit inquiries regarding hostel, finance, academics, or IT issues</p>
+    </div>
+    <div class="d-flex gap-2">
+        <button class="btn btn-primary btn-sm rounded-pill px-3" data-bs-toggle="modal" data-bs-target="#ticketModal">
+            <i class="bi bi-plus-circle me-1"></i> Raise New Ticket
+        </button>
+    </div>
+</div>
+
+<div class="card p-0 border-0 shadow-sm overflow-hidden mb-4">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>Ticket No</th>
+                    <th>Category</th>
+                    <th>Subject</th>
+                    <th>Date Raised</th>
+                    <th>Status</th>
+                    <th>Staff Resolution Notes</th>
+                </tr>
+            </thead>
+            <tbody id="ticketsTableBody">
+                <tr><td colspan="6" class="text-center py-4 text-muted">Loading tickets...</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Modal: Raise Ticket -->
+<div class="modal fade" id="ticketModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header border-0 pb-0">
+                <h5 class="modal-title fw-bold">Raise Support Ticket</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="ticketForm">
+                <div class="modal-body py-3">
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold text-secondary">Department / Category *</label>
+                        <select id="ticketCategory" class="form-select" required>
+                            <option value="academics">Academics & Examination</option>
+                            <option value="fee">Fees & Financial Services</option>
+                            <option value="hostel">Hostel & Student Living</option>
+                            <option value="it">Portal & IT Systems</option>
+                            <option value="other">General Administration</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold text-secondary">Subject / Issue Summary *</label>
+                        <input type="text" id="ticketSubject" class="form-control" placeholder="e.g. Wi-Fi router connectivity in library" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold text-secondary">Detailed Description *</label>
+                        <textarea id="ticketDesc" class="form-control" rows="4" placeholder="Explain the problem and relevant room/reference numbers..." required></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 pt-0">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary px-4">Submit Ticket</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', loadTickets);
+
+async function loadTickets() {
+    const tbody = document.getElementById('ticketsTableBody');
+    try {
+        const res = await api.get('/services/tickets/');
+        const tickets = res.results || res.data || [];
+        if (!tickets.length) {
+            tbody.innerHTML = `<tr><td colspan="6" class="text-center py-4 text-muted">No support tickets found.</td></tr>`;
+            return;
+        }
+
+        const badges = {
+            'resolved': '<span class="badge bg-success">Resolved</span>',
+            'in_progress': '<span class="badge bg-warning text-dark">In Progress</span>',
+            'open': '<span class="badge bg-danger">Open</span>',
+            'closed': '<span class="badge bg-secondary">Closed</span>'
+        };
+
+        tbody.innerHTML = tickets.map(t => `
+            <tr>
+                <td class="font-monospace fw-bold text-primary">${t.ticket_no}</td>
+                <td><span class="badge bg-light text-dark border text-uppercase">${t.category}</span></td>
+                <td>
+                    <div class="fw-semibold text-dark">${t.subject}</div>
+                    <span class="text-muted small">${t.description.substring(0, 70)}...</span>
+                </td>
+                <td>${new Date(t.created_at).toLocaleDateString()}</td>
+                <td>${badges[t.status] || t.status}</td>
+                <td class="small text-secondary">${t.response || 'Pending investigation by support staff'}</td>
+            </tr>
+        `).join('');
+    } catch(err) {
+        console.error(err);
+        tbody.innerHTML = `<tr><td colspan="6" class="text-center text-danger py-4">Failed to load tickets.</td></tr>`;
+    }
+}
+
+document.getElementById('ticketForm')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const data = {
+        category: document.getElementById('ticketCategory').value,
+        subject: document.getElementById('ticketSubject').value,
+        description: document.getElementById('ticketDesc').value
+    };
+
+    try {
+        await api.post('/services/tickets/', data);
+        showToast('Support ticket created successfully!', 'success');
+        bootstrap.Modal.getInstance(document.getElementById('ticketModal')).hide();
+        document.getElementById('ticketForm').reset();
+        loadTickets();
+    } catch(err) {
+        showToast(err.message || 'Failed to submit ticket', 'danger');
+    }
+});
+</script>
+{% endblock %}

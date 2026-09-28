@@ -1,0 +1,421 @@
+{% extends 'base.html' %}
+
+{% block title %}Examinations & Timetables — EduManager{% endblock %}
+
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
+    <div>
+        <h3 class="fw-bold text-dark mb-1">Examinations & Timetables</h3>
+        <p class="text-muted small mb-0">Official institutional examination schedules, room allotments, and admit cards</p>
+    </div>
+    <div class="d-flex gap-2">
+        <button class="btn btn-outline-secondary btn-sm" onclick="exportTableToCSV('#schedulesTableBody', 'examination_schedule.csv')">
+            <i class="bi bi-file-earmark-spreadsheet me-1 text-success"></i> Export Timetable
+        </button>
+        <a href="/exams/admit-card/" class="btn btn-outline-primary btn-sm">
+            <i class="bi bi-qr-code-scan me-1"></i> My Hall Ticket
+        </a>
+        <div data-role="admin">
+            <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#examModal">
+                <i class="bi bi-plus-circle me-1"></i> New Exam Series
+            </button>
+            <button class="btn btn-dark btn-sm" data-bs-toggle="modal" data-bs-target="#scheduleModal">
+                <i class="bi bi-calendar-plus me-1"></i> Add Paper
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Active Examinations Cards Grid -->
+<div class="row g-3 mb-4" id="examsCardsContainer">
+    <div class="col-12 text-center py-4 text-muted">
+        <div class="spinner-border spinner-border-sm text-primary me-2" role="status"></div>
+        Loading examination terms...
+    </div>
+</div>
+
+<!-- Timetable Filter & Paper List -->
+<div class="card p-4 border-0 shadow-sm mb-4">
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-3">
+        <div class="d-flex align-items-center gap-2">
+            <div class="bg-primary bg-opacity-10 text-primary p-2 rounded-3">
+                <i class="bi bi-calendar3-range fs-5"></i>
+            </div>
+            <div>
+                <div class="d-flex align-items-center gap-2">
+                    <h5 class="fw-bold mb-0">Examination Timetable</h5>
+                    <span id="studentDeptBadge" class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 d-none">
+                        <i class="bi bi-building me-1"></i><span id="studentDeptText">Department</span>
+                    </span>
+                </div>
+                <span class="text-muted small" id="timetableSubtitle">Real-time room numbers and scheduled paper slots</span>
+            </div>
+        </div>
+        <div class="d-flex gap-2 flex-wrap">
+            <select id="examFilterSelect" class="form-select form-select-sm" style="min-width: 220px;" onchange="loadSchedules()">
+                <option value="">All Examinations</option>
+            </select>
+            <select id="courseFilterSelect" class="form-select form-select-sm" style="min-width: 160px;" onchange="loadSchedules()">
+                <option value="">All Courses</option>
+            </select>
+        </div>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>Date & Time</th>
+                    <th>Subject</th>
+                    <th>Course & Sem</th>
+                    <th>Examination Hall</th>
+                    <th>Max Marks</th>
+                    <th>Exam Series</th>
+                    <th class="text-end">Actions</th>
+                </tr>
+            </thead>
+            <tbody id="schedulesTableBody">
+                <tr><td colspan="7" class="text-center py-4 text-muted">Loading schedule entries...</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Modal: Create Exam -->
+<div class="modal fade" id="examModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header border-0 pb-0">
+                <h5 class="modal-title fw-bold">Create Examination Series</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="createExamForm">
+                <div class="modal-body py-3">
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold text-secondary">Exam Title *</label>
+                        <input type="text" id="examTitle" class="form-control" placeholder="e.g. Mid-Semester Exam Autumn 2026" required>
+                    </div>
+                    <div class="row g-2 mb-3">
+                        <div class="col-6">
+                            <label class="form-label small fw-semibold text-secondary">Exam Type *</label>
+                            <select id="examType" class="form-select" required>
+                                <option value="mid_term">Mid-Semester</option>
+                                <option value="final">End-Semester Final</option>
+                                <option value="practical">Practical / Viva</option>
+                                <option value="unit_test">Unit Test</option>
+                            </select>
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label small fw-semibold text-secondary">Academic Year *</label>
+                            <input type="text" id="examAcademicYear" class="form-control" value="2026-2027" required>
+                        </div>
+                    </div>
+                    <div class="row g-2 mb-3">
+                        <div class="col-6">
+                            <label class="form-label small fw-semibold text-secondary">Start Date *</label>
+                            <input type="date" id="examStartDate" class="form-control" required>
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label small fw-semibold text-secondary">End Date *</label>
+                            <input type="date" id="examEndDate" class="form-control" required>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold text-secondary">Candidate Instructions</label>
+                        <textarea id="examInstructions" class="form-control" rows="3" placeholder="Instructions printed on Admit Card..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 pt-0">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary px-4">Create Exam</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Add Schedule Paper -->
+<div class="modal fade" id="scheduleModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header border-0 pb-0">
+                <h5 class="modal-title fw-bold">Add Examination Paper</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="createScheduleForm">
+                <div class="modal-body py-3">
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold text-secondary">Examination *</label>
+                        <select id="schedExamSelect" class="form-select" required></select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold text-secondary">Subject *</label>
+                        <select id="schedSubjectSelect" class="form-select" required></select>
+                    </div>
+                    <div class="row g-2 mb-3">
+                        <div class="col-12">
+                            <label class="form-label small fw-semibold text-secondary">Exam Date *</label>
+                            <input type="date" id="schedDate" class="form-control" required>
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label small fw-semibold text-secondary">Start Time *</label>
+                            <input type="time" id="schedStartTime" class="form-control" value="09:30" required>
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label small fw-semibold text-secondary">End Time *</label>
+                            <input type="time" id="schedEndTime" class="form-control" value="12:30" required>
+                        </div>
+                    </div>
+                    <div class="row g-2 mb-3">
+                        <div class="col-8">
+                            <label class="form-label small fw-semibold text-secondary">Room / Hall *</label>
+                            <input type="text" id="schedRoom" class="form-control" placeholder="e.g. Hall 101 (Block A)" required>
+                        </div>
+                        <div class="col-4">
+                            <label class="form-label small fw-semibold text-secondary">Max Marks *</label>
+                            <input type="number" id="schedMaxMarks" class="form-control" value="50" required>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 pt-0">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary px-4">Add Paper</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let allExams = [];
+let allCourses = [];
+let allSubjects = [];
+
+document.addEventListener('DOMContentLoaded', async () => {
+    // Show student department indicator if logged in as student
+    const user = auth.getUser();
+    if (auth.isStudent() && user && user.profile_info) {
+        const badge = document.getElementById('studentDeptBadge');
+        const text = document.getElementById('studentDeptText');
+        const subtitle = document.getElementById('timetableSubtitle');
+        if (badge && text && user.profile_info.department) {
+            text.textContent = user.profile_info.department;
+            badge.classList.remove('d-none');
+        }
+        if (subtitle && user.profile_info.department) {
+            const courseTitle = user.profile_info.course || '';
+            subtitle.textContent = `Official department examination timetable for ${user.profile_info.department}${courseTitle ? ' • ' + courseTitle : ''}`;
+        }
+    }
+
+    await Promise.all([loadExams(), loadCourses(), loadSubjects()]);
+    await loadSchedules();
+
+    // Form handlers
+    document.getElementById('createExamForm')?.addEventListener('submit', handleCreateExam);
+    document.getElementById('createScheduleForm')?.addEventListener('submit', handleCreateSchedule);
+});
+
+async function loadExams() {
+    try {
+        const res = await api.get('/exams/');
+        allExams = res.results || res.data || [];
+        renderExamsCards(allExams);
+        populateExamSelects(allExams);
+    } catch (e) {
+        console.error(e);
+        document.getElementById('examsCardsContainer').innerHTML = `
+            <div class="col-12 text-center text-danger py-4">
+                <i class="bi bi-exclamation-triangle me-1"></i> Failed to load examinations.
+            </div>`;
+    }
+}
+
+function renderExamsCards(exams) {
+    const container = document.getElementById('examsCardsContainer');
+    if (!exams.length) {
+        container.innerHTML = `<div class="col-12 text-center text-muted py-4">No examination series published yet.</div>`;
+        return;
+    }
+
+    const typeBadges = {
+        'mid_term': '<span class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25">Mid-Semester</span>',
+        'final': '<span class="badge bg-danger bg-opacity-10 text-danger border border-danger border-opacity-25">Final End-Sem</span>',
+        'practical': '<span class="badge bg-info bg-opacity-10 text-info border border-info border-opacity-25">Practical / Viva</span>',
+        'unit_test': '<span class="badge bg-warning bg-opacity-10 text-warning border border-warning border-opacity-25">Unit Test</span>'
+    };
+
+    container.innerHTML = exams.map(exam => `
+        <div class="col-md-6 col-lg-4">
+            <div class="card h-100 border-0 shadow-sm position-relative overflow-hidden">
+                <div class="card-body p-4">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        ${typeBadges[exam.exam_type] || '<span class="badge bg-secondary">Exam</span>'}
+                        <span class="badge bg-light text-dark border">${exam.academic_year}</span>
+                    </div>
+                    <h5 class="fw-bold text-dark mb-2">${exam.title}</h5>
+                    <div class="text-muted small mb-3">
+                        <i class="bi bi-calendar-event me-1"></i> ${exam.start_date} &rarr; ${exam.end_date}
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center pt-3 border-top">
+                        <span class="small fw-semibold text-secondary">
+                            <i class="bi bi-journal-text me-1 text-primary"></i> ${exam.schedules_count || (exam.schedules ? exam.schedules.length : 0)} Papers Scheduled
+                        </span>
+                        <a href="/exams/admit-card/?exam_id=${exam.id}" class="btn btn-outline-primary btn-sm rounded-pill px-3">
+                            <i class="bi bi-qr-code me-1"></i> Admit Card
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `).join('');
+}
+
+function populateExamSelects(exams) {
+    const filterSelect = document.getElementById('examFilterSelect');
+    const modalSelect = document.getElementById('schedExamSelect');
+
+    filterSelect.innerHTML = '<option value="">All Examinations</option>' + exams.map(e => `<option value="${e.id}">${e.title}</option>`).join('');
+    modalSelect.innerHTML = '<option value="">Select Examination</option>' + exams.map(e => `<option value="${e.id}">${e.title}</option>`).join('');
+}
+
+async function loadCourses() {
+    try {
+        const res = await api.get('/courses/');
+        allCourses = res.results || res.data || [];
+        const sel = document.getElementById('courseFilterSelect');
+        if (allCourses.length === 0) {
+            sel.classList.add('d-none');
+            return;
+        }
+        const label = auth.isStudent() ? 'All Department Courses' : 'All Courses';
+        sel.innerHTML = `<option value="">${label}</option>` + allCourses.map(c => `<option value="${c.id}">${c.code} - ${c.name}</option>`).join('');
+    } catch(e) {
+        console.error(e);
+    }
+}
+
+async function loadSubjects() {
+    try {
+        const res = await api.get('/subjects/');
+        allSubjects = res.results || res.data || [];
+        const sel = document.getElementById('schedSubjectSelect');
+        sel.innerHTML = '<option value="">Select Subject</option>' + allSubjects.map(s => `<option value="${s.id}">${s.code} - ${s.name} (Sem ${s.semester})</option>`).join('');
+    } catch(e) {
+        console.error(e);
+    }
+}
+
+async function loadSchedules() {
+    const tbody = document.getElementById('schedulesTableBody');
+    const examId = document.getElementById('examFilterSelect').value;
+    const courseId = document.getElementById('courseFilterSelect').value;
+
+    let url = '/exams/schedules/?';
+    if (examId) url += `exam=${examId}&`;
+    if (courseId) url += `subject__course=${courseId}&`;
+
+    try {
+        const res = await api.get(url);
+        const schedules = res.results || res.data || [];
+        renderSchedulesTable(schedules);
+    } catch (e) {
+        console.error(e);
+        tbody.innerHTML = `<tr><td colspan="7" class="text-center text-danger py-4">Failed to load examination timetable.</td></tr>`;
+    }
+}
+
+function renderSchedulesTable(schedules) {
+    const tbody = document.getElementById('schedulesTableBody');
+    if (!schedules.length) {
+        tbody.innerHTML = `<tr><td colspan="7" class="text-center py-4 text-muted">No scheduled examination papers found matching criteria.</td></tr>`;
+        return;
+    }
+
+    tbody.innerHTML = schedules.map(s => {
+        return `
+            <tr>
+                <td>
+                    <div class="fw-bold text-dark">${s.date}</div>
+                    <div class="text-muted small">${s.start_time} - ${s.end_time}</div>
+                </td>
+                <td>
+                    <div class="fw-semibold text-dark">${s.subject_name}</div>
+                    <span class="badge bg-light text-secondary border font-monospace">${s.subject_code}</span>
+                </td>
+                <td>
+                    <div class="text-dark small fw-semibold">${s.course_code || ''}</div>
+                    <div class="text-muted small">Semester ${s.semester || '1'}</div>
+                </td>
+                <td>
+                    <span class="badge bg-secondary bg-opacity-10 text-dark border">
+                        <i class="bi bi-geo-alt me-1 text-primary"></i> ${s.room_number}
+                    </span>
+                </td>
+                <td>
+                    <span class="fw-bold text-dark">${s.max_marks}</span>
+                    <span class="text-muted small">pts</span>
+                </td>
+                <td>
+                    <span class="text-muted small">${s.exam_title || 'Mid-Term'}</span>
+                </td>
+                <td class="text-end">
+                    <a href="/exams/admit-card/?exam_id=${s.exam}" class="btn btn-sm btn-light border" title="Admit Card">
+                        <i class="bi bi-printer text-primary"></i>
+                    </a>
+                </td>
+            </tr>
+        `;
+    }).join('');
+}
+
+async function handleCreateExam(e) {
+    e.preventDefault();
+    const data = {
+        title: document.getElementById('examTitle').value,
+        exam_type: document.getElementById('examType').value,
+        academic_year: document.getElementById('examAcademicYear').value,
+        start_date: document.getElementById('examStartDate').value,
+        end_date: document.getElementById('examEndDate').value,
+        instructions: document.getElementById('examInstructions').value,
+        is_published: true
+    };
+
+    try {
+        await api.post('/exams/', data);
+        showToast('Examination series created successfully!', 'success');
+        bootstrap.Modal.getInstance(document.getElementById('examModal')).hide();
+        document.getElementById('createExamForm').reset();
+        await loadExams();
+    } catch (err) {
+        showToast(err.message || 'Failed to create exam', 'danger');
+    }
+}
+
+async function handleCreateSchedule(e) {
+    e.preventDefault();
+    const data = {
+        exam: document.getElementById('schedExamSelect').value,
+        subject: document.getElementById('schedSubjectSelect').value,
+        date: document.getElementById('schedDate').value,
+        start_time: document.getElementById('schedStartTime').value,
+        end_time: document.getElementById('schedEndTime').value,
+        room_number: document.getElementById('schedRoom').value,
+        max_marks: parseInt(document.getElementById('schedMaxMarks').value) || 50
+    };
+
+    try {
+        await api.post('/exams/schedules/', data);
+        showToast('Paper schedule added successfully!', 'success');
+        bootstrap.Modal.getInstance(document.getElementById('scheduleModal')).hide();
+        document.getElementById('createScheduleForm').reset();
+        await loadSchedules();
+        await loadExams();
+    } catch (err) {
+        showToast(err.message || 'Failed to add schedule', 'danger');
+    }
+}
+</script>
+{% endblock %}
