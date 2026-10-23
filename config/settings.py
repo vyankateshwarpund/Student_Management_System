@@ -10,15 +10,15 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # Environment variables
 env = environ.Env(
     DEBUG=(bool, False),
-    ALLOWED_HOSTS=(list, ['localhost', '127.0.0.1']),
+    ALLOWED_HOSTS=(list, ['localhost', '127.0.0.1', '.pythonanywhere.com']),
 )
 environ.Env.read_env(os.path.join(BASE_DIR, '.env'))
 
 # Security
-SECRET_KEY = env('SECRET_KEY')
-DEBUG = env('DEBUG')
-ALLOWED_HOSTS = env('ALLOWED_HOSTS')
-for _h in ['testserver', 'localhost', '127.0.0.1']:
+SECRET_KEY = env('SECRET_KEY', default='django-insecure-sms-key-change-in-production-1234567890')
+DEBUG = env('DEBUG', default=True)
+ALLOWED_HOSTS = env('ALLOWED_HOSTS', default=['localhost', '127.0.0.1', '.pythonanywhere.com'])
+for _h in ['testserver', 'localhost', '127.0.0.1', '.pythonanywhere.com']:
     if _h not in ALLOWED_HOSTS:
         ALLOWED_HOSTS.append(_h)
 
