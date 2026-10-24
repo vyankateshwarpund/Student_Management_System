@@ -12,6 +12,11 @@ def login_view(request):
     return render(request, 'auth/login.html')
 
 
+def reset_password_view(request):
+    """Password reset view."""
+    return render(request, 'auth/reset_password.html')
+
+
 def register_view(request):
     """Public registration is disabled. Redirect to login."""
     return redirect('/login/')

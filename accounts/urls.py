@@ -15,6 +15,8 @@ auth_urlpatterns = [
     path('token/refresh/', TokenRefreshView.as_view(), name='token-refresh'),
     path('profile/', views.ProfileView.as_view(), name='auth-profile'),
     path('change-password/', views.ChangePasswordView.as_view(), name='auth-change-password'),
+    path('forgot-password/', views.ForgotPasswordRequestView.as_view(), name='auth-forgot-password'),
+    path('reset-password-confirm/', views.ResetPasswordConfirmView.as_view(), name='auth-reset-password-confirm'),
 ]
 
 # User management endpoints: /api/users/

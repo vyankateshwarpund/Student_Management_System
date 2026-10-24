@@ -37,8 +37,9 @@
                 </div>
 
                 <div class="mb-3">
-                    <div class="d-flex justify-content-between">
-                        <label class="form-label small fw-semibold text-secondary">Password</label>
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <label class="form-label small fw-semibold text-secondary mb-0">Password</label>
+                        <a href="javascript:void(0)" class="small text-decoration-none text-primary fw-medium" data-bs-toggle="modal" data-bs-target="#forgotPasswordModal">Forgot Password?</a>
                     </div>
                     <div class="input-group">
                         <span class="input-group-text bg-light border-end-0"><i class="bi bi-key text-muted"></i></span>
@@ -51,19 +52,7 @@
                 </button>
             </form>
 
-            <!-- Quick Demo Credentials Box -->
-            <div class="p-3 bg-light rounded-3 border small">
-                <div class="fw-semibold text-secondary mb-2 d-flex align-items-center gap-1">
-                    <i class="bi bi-lightning-charge-fill text-warning"></i> Quick Demo Logins:
-                </div>
-                <div class="d-flex flex-wrap gap-2">
-                    <button class="btn btn-sm btn-outline-secondary py-1 px-2 demo-btn" data-user="admin1" data-pass="TestPass123!">Admin</button>
-                    <button class="btn btn-sm btn-outline-secondary py-1 px-2 demo-btn" data-user="teacher1" data-pass="TeacherPass123!">Teacher</button>
-                    <button class="btn btn-sm btn-outline-secondary py-1 px-2 demo-btn" data-user="student1" data-pass="TestPass123!">Student</button>
-                </div>
-            </div>
-
-            <div class="text-center mt-4 text-muted small">
+            <div class="text-center mt-3 text-muted small">
                 <div class="d-inline-flex align-items-center gap-1 text-secondary fw-semibold">
                     <i class="bi bi-shield-lock-fill text-primary"></i> Protected Institutional System
                 </div>
@@ -74,20 +63,58 @@
         </div>
     </div>
 
+    <!-- Forgot Password Modal -->
+    <div class="modal fade" id="forgotPasswordModal" tabindex="-1" aria-labelledby="forgotPasswordModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered" style="max-width: 440px;">
+            <div class="modal-content border-0 shadow rounded-4">
+                <div class="modal-header border-0 pb-0">
+                    <div class="d-flex align-items-center gap-2">
+                        <div class="d-inline-flex align-items-center justify-content-center bg-primary-subtle text-primary rounded-circle" style="width: 40px; height: 40px;">
+                            <i class="bi bi-key-fill fs-5"></i>
+                        </div>
+                        <div>
+                            <h5 class="modal-title fw-bold" id="forgotPasswordModalLabel">Forgot Password</h5>
+                            <p class="text-muted small mb-0">Recover access to your account</p>
+                        </div>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body pt-3">
+                    <form id="forgotPasswordForm">
+                        <div class="mb-3">
+                            <label class="form-label small fw-semibold text-secondary">Username or Registered Email</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light border-end-0"><i class="bi bi-person text-muted"></i></span>
+                                <input type="text" id="forgotIdentity" class="form-control bg-light border-start-0" placeholder="e.g. your username or institutional email" required>
+                            </div>
+                        </div>
+
+                        <div id="forgotAlert" class="alert d-none small py-2 mb-3"></div>
+
+                        <button type="submit" id="forgotSubmitBtn" class="btn btn-primary w-100 py-2 fw-semibold rounded-3 mb-2">
+                            <span>Request Reset Link</span>
+                        </button>
+                    </form>
+
+                    <div class="border-top pt-3 mt-3">
+                        <div class="d-flex align-items-start gap-2 p-2 bg-light rounded-3 small text-muted">
+                            <i class="bi bi-info-circle-fill text-primary mt-1"></i>
+                            <div>
+                                <span class="fw-semibold text-dark">Institutional Support:</span>
+                                If you are a student or faculty member and cannot access your email, please contact your <strong>College Administrator</strong> or Department HOD for immediate in-person password reset.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Bootstrap & API JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="/static/js/api.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            // Fill demo credentials on button click
-            document.querySelectorAll('.demo-btn').forEach(btn => {
-                btn.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    document.getElementById('username').value = btn.dataset.user;
-                    document.getElementById('password').value = btn.dataset.pass;
-                });
-            });
-
             // Handle Login Form Submission
             const form = document.getElementById('loginForm');
             const submitBtn = document.getElementById('submitBtn');
@@ -115,6 +142,46 @@
                     showToast(err.message || 'Invalid username or password', 'danger');
                     submitBtn.disabled = false;
                     submitBtn.innerHTML = '<span>Sign In</span>';
+                }
+            });
+
+            // Handle Forgot Password Form Submission
+            const forgotForm = document.getElementById('forgotPasswordForm');
+            const forgotSubmitBtn = document.getElementById('forgotSubmitBtn');
+            const forgotAlert = document.getElementById('forgotAlert');
+
+            forgotForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const identity = document.getElementById('forgotIdentity').value.trim();
+                if (!identity) return;
+
+                forgotSubmitBtn.disabled = true;
+                forgotSubmitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Checking...';
+                forgotAlert.classList.add('d-none');
+
+                try {
+                    const res = await api.post('/auth/forgot-password/', { identity });
+                    forgotAlert.className = 'alert alert-success small py-2 mb-3';
+                    
+                    if (res.data && res.data.reset_url) {
+                        forgotAlert.innerHTML = `
+                            <strong>Reset link generated!</strong><br>
+                            ${res.data.email_hint ? `<div class="mt-1">Notification sent to ${res.data.email_hint}</div>` : ''}
+                            <div class="mt-2">
+                                <a href="${res.data.reset_url}" class="btn btn-sm btn-success fw-semibold text-white">Click here to Reset Password Now &rarr;</a>
+                            </div>
+                        `;
+                    } else {
+                        forgotAlert.textContent = res.message || 'Reset instructions have been sent to your registered address if found.';
+                    }
+                    forgotAlert.classList.remove('d-none');
+                } catch (err) {
+                    forgotAlert.className = 'alert alert-danger small py-2 mb-3';
+                    forgotAlert.textContent = err.message || 'Unable to process reset request. Please contact your administrator.';
+                    forgotAlert.classList.remove('d-none');
+                } finally {
+                    forgotSubmitBtn.disabled = false;
+                    forgotSubmitBtn.innerHTML = '<span>Request Reset Link</span>';
                 }
             });
         });
