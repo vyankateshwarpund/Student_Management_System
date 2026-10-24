@@ -172,10 +172,13 @@ class Command(BaseCommand):
             # 5. Coursework Assignments & Submissions
             self.stdout.write("Generating coursework assignments and submissions...")
             assignment_specs = [
-                # Semester 1
+                # Semester 1 (6 assignments for Ayush & Batch)
                 ("CS101", "C Programming Lab 4: Dynamic Arrays & Pointer Arithmetic", "Implement dynamic array resizing and string manipulation without string.h", 5, 100),
+                ("CS101", "C Programming Lab 5: Structs, Linked Lists & File I/O", "Build an in-memory student record manager using singly linked list and file storage", 12, 100),
                 ("MAT101", "Calculus Problem Set 3: Taylor Series & Partial Differentiation", "Solve problems 1-15 from Chapter 4 of Higher Engineering Mathematics", 8, 50),
-                ("PHY101", "Optics & Laser Lab Manual: Numerical Aperture Verification", "Complete lab observations and graphs for semiconductor laser experiment", -10, 50),
+                ("MAT101", "Linear Algebra Assignment 4: Matrix Diagonalization & Eigenvalues", "Determine eigenvalues and diagonalize symmetric matrices with verification steps", 15, 50),
+                ("PHY101", "Optics & Laser Lab Manual: Numerical Aperture & Interference", "Complete lab observations and graphs for semiconductor laser experiment", 10, 50),
+                ("PHY101", "Quantum Mechanics Set 2: Wave Equations & Tunneling Effect", "Derive 1D time-independent Schrodinger equation for finite potential well", 18, 50),
                 # Semester 3
                 ("CS301", "DSA Problem Set: Binary Search Trees & AVL Rotations", "Implement AVL tree insertion and verify height balancing factor", 6, 100),
                 ("CS302", "Digital Logic Design: 4-Bit Synchronous Up/Down Counter", "Design and simulate using Logisim circuit simulator", -5, 50),
