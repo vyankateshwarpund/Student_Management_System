@@ -132,6 +132,86 @@ class Command(BaseCommand):
             self.stdout.write(self.style.SUCCESS(f"Verified {len(subjects)} subjects."))
 
             # 4. Faculty Members (Teachers)
+            # Core Admin & Demo Accounts
+            admin_user, _ = User.objects.get_or_create(
+                username="admin1",
+                defaults={
+                    "email": "admin@test.com",
+                    "first_name": "System",
+                    "last_name": "Administrator",
+                    "role": "admin",
+                    "is_staff": True,
+                    "is_superuser": True,
+                }
+            )
+            admin_user.set_password("TestPass123!")
+            admin_user.role = "admin"
+            admin_user.is_staff = True
+            admin_user.is_superuser = True
+            admin_user.save()
+
+            teacher_user, _ = User.objects.get_or_create(
+                username="teacher1",
+                defaults={
+                    "email": "teacher1@school.edu",
+                    "first_name": "Suresh",
+                    "last_name": "Rao",
+                    "role": "teacher",
+                    "phone": "9820011230",
+                }
+            )
+            teacher_user.set_password("TeacherPass123!")
+            teacher_user.role = "teacher"
+            teacher_user.save()
+
+            cse_dept = departments["CSE"]
+            t_prof1, _ = Teacher.objects.get_or_create(
+                user=teacher_user,
+                defaults={
+                    "employee_id": "TCH001",
+                    "department": cse_dept,
+                    "qualification": "M.Tech in Computer Science",
+                    "phone": "9820011230",
+                }
+            )
+
+            student_user, _ = User.objects.get_or_create(
+                username="student1",
+                defaults={
+                    "email": "aarav.sharma@nit.ac.in",
+                    "first_name": "Aarav",
+                    "last_name": "Sharma",
+                    "role": "student",
+                    "phone": "9820011231",
+                }
+            )
+            student_user.set_password("TestPass123!")
+            student_user.role = "student"
+            student_user.save()
+
+            Student.objects.get_or_create(
+                user=student_user,
+                defaults={
+                    "roll_number": "2026CSE001",
+                    "first_name": "Aarav",
+                    "last_name": "Sharma",
+                    "email": "aarav.sharma@nit.ac.in",
+                    "phone": "9820011231",
+                    "gender": "male",
+                    "date_of_birth": date(2004, 5, 15),
+                    "department": cse_dept,
+                    "course": courses["BT-CSE"],
+                    "semester": 4,
+                    "year": 2026,
+                    "status": "active",
+                    "address": "Flat 204, Green Valley Heights",
+                    "city": "Mumbai",
+                    "state": "Maharashtra",
+                    "pincode": "400001",
+                    "admission_date": date(2022, 8, 1),
+                }
+            )
+
             teacher_specs = [
                 ("dr_sharma", "dr_sharma@school.edu", "Ramesh", "Sharma", "CSE", "FAC101", "Ph.D. in Computer Science (IIT Bombay)", "9820011221"),
                 ("dr_patel", "dr_patel@school.edu", "Sunita", "Patel", "CSE", "FAC102", "Ph.D. in AI & Robotics (IISc)", "9820011222"),
