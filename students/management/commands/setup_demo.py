@@ -363,7 +363,6 @@ class Command(BaseCommand):
                         "end_time": et,
                         "room_number": rm,
                         "max_marks": 100,
-                        "passing_marks": 40
                     }
                 )
             self.stdout.write(self.style.SUCCESS("[OK] Exams: Winter 2026 final exam schedule configured (next in 5 days)."))
