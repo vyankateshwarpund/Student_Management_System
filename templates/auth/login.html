@@ -52,6 +52,18 @@
                 </button>
             </form>
 
+            <!-- Quick Demo Credentials Box -->
+            <div class="p-3 bg-light rounded-3 border small mb-2">
+                <div class="fw-semibold text-secondary mb-2 d-flex align-items-center gap-1">
+                    <i class="bi bi-lightning-charge-fill text-warning"></i> Quick Demo Logins:
+                </div>
+                <div class="d-flex flex-wrap gap-2">
+                    <button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2 demo-btn" data-user="admin1" data-pass="TestPass123!">Admin</button>
+                    <button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2 demo-btn" data-user="teacher1" data-pass="TeacherPass123!">Teacher</button>
+                    <button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2 demo-btn" data-user="student1" data-pass="TestPass123!">Student</button>
+                </div>
+            </div>
+
             <div class="text-center mt-3 text-muted small">
                 <div class="d-inline-flex align-items-center gap-1 text-secondary fw-semibold">
                     <i class="bi bi-shield-lock-fill text-primary"></i> Protected Institutional System
@@ -115,6 +127,15 @@
     <script src="/static/js/api.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
+            // Fill demo credentials on button click
+            document.querySelectorAll('.demo-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    document.getElementById('username').value = btn.dataset.user;
+                    document.getElementById('password').value = btn.dataset.pass;
+                });
+            });
+
             // Handle Login Form Submission
             const form = document.getElementById('loginForm');
             const submitBtn = document.getElementById('submitBtn');
