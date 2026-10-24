@@ -189,10 +189,10 @@ class Command(BaseCommand):
             student_user.role = "student"
             student_user.save()
 
-            Student.objects.get_or_create(
-                user=student_user,
+            Student.objects.update_or_create(
+                student_id="STU-2026-001",
                 defaults={
-                    "roll_number": "2026CSE001",
+                    "user": student_user,
                     "first_name": "Aarav",
                     "last_name": "Sharma",
                     "email": "aarav.sharma@nit.ac.in",

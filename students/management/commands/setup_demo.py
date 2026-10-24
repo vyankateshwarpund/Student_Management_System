@@ -175,26 +175,28 @@ class Command(BaseCommand):
             ayush_user.is_active = True
             ayush_user.save()
 
-            ayush, _ = Student.objects.update_or_create(
-                student_id="STU-CSE1-002",
-                defaults={
-                    "user": ayush_user,
-                    "first_name": "Ayush",
-                    "last_name": "Deshmukh",
-                    "email": "student002.cse1@example.com",
-                    "phone": "9800000002",
-                    "gender": "male",
-                    "date_of_birth": date(2006, 3, 13),
-                    "department": dept,
-                    "course": course,
-                    "semester": 1,
-                    "year": 1,
-                    "city": "Aurangabad",
-                    "state": "Maharashtra",
-                    "status": "active",
-                    "admission_date": date(2026, 8, 1),
-                }
-            )
+            ayush = Student.objects.filter(user=ayush_user).first()
+            if not ayush:
+                ayush = Student.objects.filter(student_id="STU-CSE1-002").first()
+            if not ayush:
+                ayush = Student(student_id="STU-CSE1-002")
+            ayush.user = ayush_user
+            ayush.student_id = "STU-CSE1-002"
+            ayush.first_name = "Ayush"
+            ayush.last_name = "Deshmukh"
+            ayush.email = "student002.cse1@example.com"
+            ayush.phone = "9800000002"
+            ayush.gender = "male"
+            ayush.date_of_birth = date(2006, 3, 13)
+            ayush.department = dept
+            ayush.course = course
+            ayush.semester = 1
+            ayush.year = 1
+            ayush.city = "Aurangabad"
+            ayush.state = "Maharashtra"
+            ayush.status = "active"
+            ayush.admission_date = date(2026, 8, 1)
+            ayush.save()
             self.stdout.write(self.style.SUCCESS("[OK] Student: stu_cse1_002 (Ayush Deshmukh) / StudentPass123!"))
 
             # Fallback student (student1)
@@ -213,24 +215,26 @@ class Command(BaseCommand):
             student_user.is_active = True
             student_user.save()
 
-            Student.objects.get_or_create(
-                user=student_user,
-                defaults={
-                    "roll_number": "2026CSE001",
-                    "first_name": "Aarav",
-                    "last_name": "Sharma",
-                    "email": "aarav.sharma@nit.ac.in",
-                    "phone": "9820011231",
-                    "gender": "male",
-                    "date_of_birth": date(2004, 5, 15),
-                    "department": dept,
-                    "course": course,
-                    "semester": 4,
-                    "year": 2026,
-                    "status": "active",
-                    "admission_date": date(2022, 8, 1),
-                }
-            )
+            aarav = Student.objects.filter(user=student_user).first()
+            if not aarav:
+                aarav = Student.objects.filter(student_id="STU-2026-001").first()
+            if not aarav:
+                aarav = Student(student_id="STU-2026-001")
+            aarav.user = student_user
+            aarav.first_name = "Aarav"
+            aarav.last_name = "Sharma"
+            aarav.email = "aarav.sharma@nit.ac.in"
+            aarav.phone = "9820011231"
+            aarav.gender = "male"
+            aarav.date_of_birth = date(2004, 5, 15)
+            aarav.department = dept
+            aarav.course = course
+            aarav.semester = 4
+            aarav.year = 2
+            aarav.status = "active"
+            aarav.admission_date = date(2022, 8, 1)
+            aarav.save()
+            self.stdout.write(self.style.SUCCESS("[OK] Student: student1 / TestPass123!"))
 
             # 7. Fee Structure, Invoices & Payment for Ayush
             self.stdout.write("Configuring Fee structures, invoice (INR 20,000 balance due), and payment...")
