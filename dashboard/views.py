@@ -370,7 +370,11 @@ class StudentDashboardView(APIView):
         if not exam_schedules_qs.exists():
             exam_schedules_qs = ExamSchedule.objects.all()
 
-        upcoming_schedules = exam_schedules_qs.select_related('exam', 'subject').order_by('date', 'start_time')[:5]
+        future_schedules = exam_schedules_qs.filter(date__gte=date.today()).select_related('exam', 'subject').order_by('date', 'start_time')
+        if future_schedules.exists():
+            upcoming_schedules = list(future_schedules[:5])
+        else:
+            upcoming_schedules = list(exam_schedules_qs.select_related('exam', 'subject').order_by('-date', 'start_time')[:5])
         next_exam = None
         if upcoming_schedules:
             first_exam = upcoming_schedules[0]
@@ -382,7 +386,7 @@ class StudentDashboardView(APIView):
                 'date_str': first_exam.date.strftime('%d %b') if first_exam.date else '',
                 'time_str': f"{first_exam.start_time.strftime('%I:%M %p')} - {first_exam.end_time.strftime('%I:%M %p')}" if first_exam.start_time and first_exam.end_time else '',
                 'room': first_exam.room_number or 'Main Hall',
-                'days_left': f"{days_left} Days" if (days_left is not None and days_left > 0) else ('Today' if days_left == 0 else 'Past Due'),
+                'days_left': f"{days_left} Days" if (days_left is not None and days_left > 1) else ('Tomorrow' if days_left == 1 else ('Today' if days_left == 0 else 'Past Due')),
             }
 
         upcoming_exams_list = [
